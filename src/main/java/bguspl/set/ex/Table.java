@@ -2,9 +2,11 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Vector;
 import java.util.stream.Collectors;
 
 /**
@@ -28,6 +30,12 @@ public class Table {
      * Mapping between a card and the slot it is in (null if none).
      */
     protected final Integer[] cardToSlot; // slot per card (if any)
+
+    /**
+     * vector of vectors, each vector represents the tokens placed by the corresponding player 
+     */
+    private Vector<Vector<Integer>> playersTokens;
+
 
     /**
      * Constructor for testing.
@@ -116,6 +124,7 @@ public class Table {
      */
     public void placeToken(int player, int slot) {
         // TODO implement
+        env.ui.placeToken(player, slot);
     }
 
     /**
@@ -126,6 +135,19 @@ public class Table {
      */
     public boolean removeToken(int player, int slot) {
         // TODO implement
-        return false;
+        env.ui.removeToken(player, slot);
+        return true;
     }
-}
+
+//     public void removeOrPlaceToken(int player, int slot){
+//         synchronized(this){
+//             for (int i = 0; i < playersTokens.elementAt(player).size(); i++) {
+//                 if(playersTokens.elementAt(player).elementAt(i) == slot){
+//                     removeToken(player, slot);
+//                     return;
+//                 }
+//             }
+//             placeToken(player, slot);
+//         }
+//     }
+ }

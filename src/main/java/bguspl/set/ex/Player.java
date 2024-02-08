@@ -1,5 +1,7 @@
 package bguspl.set.ex;
 
+import java.util.Vector;
+
 import bguspl.set.Env;
 
 /**
@@ -50,6 +52,29 @@ public class Player implements Runnable {
      */
     private int score;
 
+    /** 
+     * vector that will be manged in FIFO, containg incoming actions
+     */
+
+     private Vector<Integer> incomingActions; 
+     
+
+    /**
+      * number of tokens placed by the player currently
+      */
+
+     private int numOfTokens;
+
+     /*
+      * the dealer of the game
+      */
+     private Dealer dealer;
+
+     /*
+      * vector containg the current slots in which the player's tokens are placed
+      */
+     private Vector<Integer> curSlots;
+
     /**
      * The class constructor.
      *
@@ -61,9 +86,14 @@ public class Player implements Runnable {
      */
     public Player(Env env, Dealer dealer, Table table, int id, boolean human) {
         this.env = env;
+        this.dealer = dealer;
         this.table = table;
         this.id = id;
         this.human = human;
+        this.incomingActions = new Vector<>(3);
+        for (int i = 0; i < incomingActions.size(); i++) {
+            incomingActions.set(i, -1);
+        }
     }
 
     /**
@@ -76,7 +106,19 @@ public class Player implements Runnable {
         if (!human) createArtificialIntelligence();
 
         while (!terminate) {
-            // TODO implement main player loop
+            while(incomingActions.size() != 0){
+                Integer curSlot = incomingActions.get(0);
+                if(toRemove(curSlot)){
+                    table.removeToken(id, curSlot);
+                    curSlots.remove(curSlot); //WARNING: may be a problem and reomve by index instead of by value
+                    incomingActions.remove(0);
+               }
+               else{
+                    table.placeToken(id, curSlot);
+                    curSlots.add(curSlot);
+                    incomingActions.remove(0);
+               }
+            }
         }
         if (!human) try { aiThread.join(); } catch (InterruptedException ignored) {}
         env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
@@ -115,6 +157,10 @@ public class Player implements Runnable {
      */
     public void keyPressed(int slot) {
         // TODO implement
+        if(incomingActions.size() < 3){
+            incomingActions.add(slot);
+            this.notifyAll();
+        }
     }
 
     /**
@@ -125,6 +171,7 @@ public class Player implements Runnable {
      */
     public void point() {
         // TODO implement
+        //notifyALL
 
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
         env.ui.setScore(id, ++score);
@@ -135,9 +182,27 @@ public class Player implements Runnable {
      */
     public void penalty() {
         // TODO implement
+        //notifyALL
     }
 
     public int score() {
         return score;
+    }
+
+    public Vector<Integer> getIncomingActions() {
+        return incomingActions;
+    }
+
+    public int getNumOfTokens() {
+        return numOfTokens;
+    }
+
+    /**
+     * called to check if the action needed is removing or placing a token
+     * @param slot - the slot corresponding to the key pressed.
+     * @return true if we should remove a token from the slot, false if we should place a token on the slot
+     */
+    public boolean toRemove(int slot){
+        return curSlots.contains(slot);
     }
 }
