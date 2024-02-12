@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
+import java.util.concurrent.BlockingDeque;
 import java.util.stream.Collectors;
 
 
@@ -32,10 +33,11 @@ public class Table {
      */
     protected final Integer[] cardToSlot; // slot per card (if any)
 
+
     /**
-     * vector of vectors, each vector represents the tokens placed by the corresponding player 
+     * players that have placed tokens on each slot
      */
-    private Vector<Vector<Integer>> playersTokens;
+    protected Vector<Vector<Integer>> tokensOnTable;
 
 
     /**
@@ -95,7 +97,7 @@ public class Table {
      *
      * @post - the card placed is on the table, in the assigned slot.
      */
-    public void placeCard(int card, int slot) {
+    public synchronized void placeCard(int card, int slot) {
         try {
             Thread.sleep(env.config.tableDelayMillis);
         } catch (InterruptedException ignored) {}
@@ -104,18 +106,23 @@ public class Table {
         slotToCard[slot] = card;
 
         // TODO implement
+        env.ui.placeCard(card, slot);
     }
 
     /**
      * Removes a card from a grid slot on the table.
      * @param slot - the slot from which to remove the card.
      */
-    public void removeCard(int slot) {
+    public synchronized void removeCard(int slot) {
         try {
             Thread.sleep(env.config.tableDelayMillis);
         } catch (InterruptedException ignored) {}
 
         // TODO implement
+        env.ui.removeCard(slot);
+        //ask Yaniv
+        cardToSlot[slotToCard[slot]] = null;
+        slotToCard[slot] = null;
     }
 
     /**
@@ -123,8 +130,9 @@ public class Table {
      * @param player - the player the token belongs to.
      * @param slot   - the slot on which to place the token.
      */
-    public void placeToken(int player, int slot) {
+    public synchronized void placeToken(int player, int slot) {
         // TODO implement
+        tokensOnTable.elementAt(slot).add(player);
         env.ui.placeToken(player, slot);
     }
 
@@ -134,11 +142,10 @@ public class Table {
      * @param slot   - the slot from which to remove the token.
      * @return       - true iff a token was successfully removed.
      */
-    public boolean removeToken(int player, int slot) {
+    public synchronized boolean removeToken(int player, int slot) {
         // TODO implement
+        tokensOnTable.elementAt(slot).remove(player);
         env.ui.removeToken(player, slot);
         return true;
     }
-
-
  }
