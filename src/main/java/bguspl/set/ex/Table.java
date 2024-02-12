@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
+
 /**
  * This class contains the data that is visible to the player.
  *
@@ -139,15 +140,5 @@ public class Table {
         return true;
     }
 
-//     public void removeOrPlaceToken(int player, int slot){
-//         synchronized(this){
-//             for (int i = 0; i < playersTokens.elementAt(player).size(); i++) {
-//                 if(playersTokens.elementAt(player).elementAt(i) == slot){
-//                     removeToken(player, slot);
-//                     return;
-//                 }
-//             }
-//             placeToken(player, slot);
-//         }
-//     }
+
  }

@@ -4,6 +4,10 @@ import java.util.Vector;
 
 import bguspl.set.Env;
 
+import java.util.concurrent.ArrayBlockingQueue;
+
+import java.util.concurrent.BlockingQueue;
+
 /**
  * This class manages the players' threads and data
  *
@@ -53,14 +57,21 @@ public class Player implements Runnable {
     private int score;
 
     /** 
-     * vector that will be manged in FIFO, containg incoming actions
+     * we add it
+     * Queue for incoming actions
+     * size <=3
      */
-
-     private Vector<Integer> incomingActions; 
-     
+    private BlockingQueue<Integer> incomingActions;
 
     /**
+     * vector includes player current slots
+     */
+
+    private Vector<Integer> slots;
+   
+    /**
       * number of tokens placed by the player currently
+      * we add it 
       */
 
      private int numOfTokens;
@@ -90,10 +101,8 @@ public class Player implements Runnable {
         this.table = table;
         this.id = id;
         this.human = human;
-        this.incomingActions = new Vector<>(3);
-        for (int i = 0; i < incomingActions.size(); i++) {
-            incomingActions.set(i, -1);
-        }
+        this.incomingActions = new ArrayBlockingQueue<>(3);
+        
     }
 
     /**
@@ -106,20 +115,17 @@ public class Player implements Runnable {
         if (!human) createArtificialIntelligence();
 
         while (!terminate) {
-            while(incomingActions.size() != 0){
-                Integer curSlot = incomingActions.get(0);
-                if(toRemove(curSlot)){
-                    table.removeToken(id, curSlot);
-                    curSlots.remove(curSlot); //WARNING: may be a problem and reomve by index instead of by value
-                    incomingActions.remove(0);
-               }
-               else{
-                    table.placeToken(id, curSlot);
-                    curSlots.add(curSlot);
-                    incomingActions.remove(0);
+            while(incomingActions.size()>0){
+                if (slots.contains(incomingActions.peek()))
+                {
+                    table.removeToken(id, incomingActions.poll());
+                }
+                else{
+                    table.placeToken(id, incomingActions.poll());
+                }
                }
             }
-        }
+        
         if (!human) try { aiThread.join(); } catch (InterruptedException ignored) {}
         env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
     }
@@ -157,10 +163,11 @@ public class Player implements Runnable {
      */
     public void keyPressed(int slot) {
         // TODO implement
-        if(incomingActions.size() < 3){
-            incomingActions.add(slot);
-            this.notifyAll();
+        try
+        {  
+            incomingActions.put(slot);
         }
+        catch(InterruptedException ignored){}
     }
 
     /**
