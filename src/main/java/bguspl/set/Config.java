@@ -140,6 +140,7 @@ public class Config {
      * 2. If the number of entries here does not match the number of human players a warning will be issued
      */
     private final int[][] playerKeys;
+    public long penaltyFreezeMillisFreezeMillis;
 
     /**
      * The default scan codes data (this is the same as in the default config.properties file)

@@ -54,6 +54,13 @@ public class Player implements Runnable {
     private volatile boolean terminate;
 
     /**
+     * we add it
+     * holds until when the player should be freezed
+     * intialized by the cuurent time of creating the player in constructor -1 
+     */
+    private volatile long freezeUntil;
+    
+    /**
      * The current score of the player.
      */
     private int score;
@@ -96,6 +103,7 @@ public class Player implements Runnable {
         this.id = id;
         this.human = human;
         this.incomingActions = new ArrayBlockingQueue<>(3);
+        freezeUntil= System.currentTimeMillis()-1;
         
     }
 
@@ -171,7 +179,9 @@ public class Player implements Runnable {
     public void keyPressed(int slot) { //we implement
         try
         {  
-            incomingActions.put(slot); //when the queue is full the thread will wait
+            if(System.currentTimeMillis()>freezeUntil) // if the player is blocked because of getting a penalty or a point
+            {
+            incomingActions.put(slot);} //when the queue is full the thread will wait
         }
         catch(InterruptedException ignored){}
     }
@@ -185,20 +195,14 @@ public class Player implements Runnable {
     public void point() {
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
         env.ui.setScore(id, ++score);
-        try {
-            // Sleep for pointFreezeMillis
-            playerThread.sleep(env.config.pointFreezeMillis);
-            } catch (InterruptedException ignore) {}
+        freezeUntil=System.currentTimeMillis()+env.config.pointFreezeMillis; //the player is blocked for input, see keyPresses method
     }
 
     /**
      * Penalize a player and perform other related actions.
      */
     public void penalty() {
-        try {
-            // Sleep for penaltyFreezeMillis
-            Thread.sleep(env.config.penaltyFreezeMillis);
-            } catch (InterruptedException ignore) {}
+        freezeUntil=System.currentTimeMillis()+env.config.penaltyFreezeMillis; //the player is blocked for input, see keyPresses method
     }
 
     public int score() {
@@ -216,4 +220,4 @@ public class Player implements Runnable {
             slotsVector.add(slot);  
      }
 }
-}
+
