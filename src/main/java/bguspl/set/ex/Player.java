@@ -8,6 +8,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import java.util.concurrent.BlockingQueue;
 
+import java.util.Random;
+
 /**
  * This class manages the players' threads and data
  *
@@ -67,24 +69,16 @@ public class Player implements Runnable {
      * vector includes player current slots
      */
 
-    private Vector<Integer> slots;
+    private Vector<Integer> slotsVector;
    
-    /**
-      * number of tokens placed by the player currently
-      * we add it 
-      */
-
-     private int numOfTokens;
-
      /*
       * the dealer of the game
       */
      private Dealer dealer;
 
-     /*
-      * vector containg the current slots in which the player's tokens are placed
-      */
-     private Vector<Integer> curSlots;
+     private Object lockForQueue;
+
+
 
     /**
      * The class constructor.
@@ -115,19 +109,31 @@ public class Player implements Runnable {
         if (!human) createArtificialIntelligence();
 
         while (!terminate) {
-            while(incomingActions.size()>0){
-                if (slots.contains(incomingActions.peek()))
+                
+                synchronized (lockForQueue)
                 {
-                    table.removeToken(id, incomingActions.poll());
+                    int theSlot=-1; // just for compilation, is gonna be changed when there is something in the queue
+                    try{
+                    theSlot=incomingActions.take(); //wait until the queue isn't empty
+                    }
+                    catch (InterruptedException ignored){}
+                    if (slotsVector.contains(theSlot))
+                    {
+                        table.removeToken(id, theSlot);
+                        removeSlotFromArr(theSlot); //removes the theSlot from the array
+                    }
+                    else{
+                        table.placeToken(id, theSlot);
+                        addSlotToArr(theSlot); //place the theSlot from the array
+                        if (slotsVector.size()==3)
+                        {
+                        dealer.addPlayerToCheck(id); // calling the dealer to check its slots
+                        }
+                    }             
                 }
-                else{
-                    table.placeToken(id, incomingActions.poll());
-                }
-               }
-            }
-        
+        }
         if (!human) try { aiThread.join(); } catch (InterruptedException ignored) {}
-        env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
+        env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");    
     }
 
     /**
@@ -139,9 +145,10 @@ public class Player implements Runnable {
         aiThread = new Thread(() -> {
             env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
-                // TODO implement player key press simulator
-                try {
-                    synchronized (this) { wait(); }
+                int randomKey = (int)(Math.random()*12);
+
+                try { //we edit it
+                    incomingActions.put(randomKey);
                 } catch (InterruptedException ignored) {}
             }
             env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
@@ -153,7 +160,7 @@ public class Player implements Runnable {
      * Called when the game should be terminated.
      */
     public void terminate() {
-        // TODO implement
+        terminate=true;
     }
 
     /**
@@ -161,11 +168,10 @@ public class Player implements Runnable {
      *
      * @param slot - the slot corresponding to the key pressed.
      */
-    public void keyPressed(int slot) {
-        // TODO implement
+    public void keyPressed(int slot) { //we implement
         try
         {  
-            incomingActions.put(slot);
+            incomingActions.put(slot); //when the queue is full the thread will wait
         }
         catch(InterruptedException ignored){}
     }
@@ -177,39 +183,37 @@ public class Player implements Runnable {
      * @post - the player's score is updated in the ui.
      */
     public void point() {
-        // TODO implement
-        //notifyALL
-
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
         env.ui.setScore(id, ++score);
+        try {
+            // Sleep for pointFreezeMillis
+            playerThread.sleep(env.config.pointFreezeMillis);
+            } catch (InterruptedException ignore) {}
     }
 
     /**
      * Penalize a player and perform other related actions.
      */
     public void penalty() {
-        // TODO implement
-        //notifyALL
+        try {
+            // Sleep for penaltyFreezeMillis
+            Thread.sleep(env.config.penaltyFreezeMillis);
+            } catch (InterruptedException ignore) {}
     }
 
     public int score() {
         return score;
+        
     }
 
-    public Vector<Integer> getIncomingActions() {
-        return incomingActions;
-    }
+     public void removeSlotFromArr(int slot) //remove from slot Array 
+     {
+            slotsVector.remove(slot);  
+     }
 
-    public int getNumOfTokens() {
-        return numOfTokens;
-    }
-
-    /**
-     * called to check if the action needed is removing or placing a token
-     * @param slot - the slot corresponding to the key pressed.
-     * @return true if we should remove a token from the slot, false if we should place a token on the slot
-     */
-    public boolean toRemove(int slot){
-        return curSlots.contains(slot);
-    }
+     public void addSlotToArr(int slot) //remove from slot Array 
+     {
+            slotsVector.add(slot);  
+     }
+}
 }
