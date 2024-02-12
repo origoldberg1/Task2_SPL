@@ -3,6 +3,8 @@ package bguspl.set.ex;
 import bguspl.set.Env;
 
 import java.util.List;
+import java.util.Vector;
+import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 //testing 
@@ -36,6 +38,18 @@ public class Dealer implements Runnable {
      * The time when the dealer needs to reshuffle the deck due to turn timeout.
      */
     private long reshuffleTime = Long.MAX_VALUE;
+
+
+    /**
+     * slots from which cards should be removed
+     */
+    private Vector<Integer> slotsToRemove;
+
+    /**
+     * queue of players that have sets to check
+     */
+    private BlockingQueue<Player> playersToCheck;
+
 
     public Dealer(Env env, Table table, Player[] players) {
         this.env = env;
@@ -93,6 +107,9 @@ public class Dealer implements Runnable {
      */
     private void removeCardsFromTable() {
         // TODO implement
+        for (int i = 0; i < slotsToRemove.size(); i++) {
+            table.removeCard(slotsToRemove.removeFirst());
+        }
     }
 
     /**
@@ -100,6 +117,24 @@ public class Dealer implements Runnable {
      */
     private void placeCardsOnTable() {
         // TODO implement
+        int slot;
+        int card;
+        while(!deck.isEmpty() && table.countCards() < 12){
+            card = deck.removeFirst();
+            slot = findEmptySlot();
+            if(findEmptySlot() >= 0){
+                table.placeCard(card, slot);
+            }
+        }
+    }
+
+    private int findEmptySlot(){
+        for (int i = 0; i < players.length; i++) {
+            if(table.slotToCard[i] == null){
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
@@ -128,5 +163,36 @@ public class Dealer implements Runnable {
      */
     private void announceWinners() {
         // TODO implement
+    }
+
+    private void addPlayerToCheck(Player player){
+        playersToCheck.add(player);
+    }
+
+    private boolean testSet(int[]cards){
+       if(env.util.testSet(cards)){
+        for (int i = 0; i < cards.length; i++) {
+            slotsToRemove.add(table.cardToSlot[cards[i]]);
+            return true;
+        }
+       }
+       return false;
+       
+    }
+
+    private int[] slotsToCards(int[]slots){
+        int[]cards = new int[slots.length];
+        for (int i = 0; i < cards.length; i++) {
+            cards[i] = table.slotToCard[slots[i]];
+        }
+        return cards;
+    }
+
+    private int[] cardsToSlots(int[]cards){
+        int [] slots = new int[cards.length];
+        for (int i = 0; i < slots.length; i++) {
+            slots[i] = table.cardToSlot[cards[i]];
+        }
+        return slots;
     }
 }
