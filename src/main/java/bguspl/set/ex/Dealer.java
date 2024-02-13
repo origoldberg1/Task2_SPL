@@ -2,11 +2,17 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
+import static java.lang.String.format;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 //testing 
 /**
  * This class manages the dealer's threads and data
@@ -50,6 +56,15 @@ public class Dealer implements Runnable {
      */
     private BlockingQueue<Player> playersToCheck;
 
+    /**
+     * we add this
+     * holds true if dealer need to reshufle
+     * used to understand if we need to reshufle or check sets, when exiting from timerloop 
+     */
+    private boolean needToReshufle;
+
+
+    final int NUM_OF_SLOTS = 12;
 
     public Dealer(Env env, Table table, Player[] players) {
         this.env = env;
@@ -66,7 +81,7 @@ public class Dealer implements Runnable {
         env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
         while (!shouldFinish()) {
             placeCardsOnTable();
-            timerLoop();
+            timerLoop(); //self mark- should do things until we need to rersheufle or check set
             updateTimerDisplay(false);
             removeAllCardsFromTable();
         }
@@ -78,12 +93,22 @@ public class Dealer implements Runnable {
      * The inner loop of the dealer thread that runs as long as the countdown did not time out.
      */
     private void timerLoop() {
-        while (!terminate && System.currentTimeMillis() < reshuffleTime) {
+        while(System.currentTimeMillis()<reshuffleTime)
+        {
             sleepUntilWokenOrTimeout();
-            updateTimerDisplay(false);
-            removeCardsFromTable();
-            placeCardsOnTable();
+            if(!playersToCheck.isEmpty()) 
+            {
+                checkPlayersSets();
+                updateTimerDisplay(false);
+            }
         }
+        // the next lines were given
+        // while (!terminate && System.currentTimeMillis() < reshuffleTime) {
+        //     sleepUntilWokenOrTimeout();
+        //     updateTimerDisplay(false);
+        //     removeCardsFromTable();
+        //     placeCardsOnTable();
+        // }
     }
 
     /**
@@ -91,6 +116,8 @@ public class Dealer implements Runnable {
      */
     public void terminate() {
         // TODO implement
+        terminate=true;
+        env.ui.dispose(); //closes window
     }
 
     /**
@@ -107,8 +134,14 @@ public class Dealer implements Runnable {
      */
     private void removeCardsFromTable() {
         // TODO implement
-        for (int i = 0; i < slotsToRemove.size(); i++) {
-            table.removeCard(slotsToRemove.removeFirst());
+        while (slotsToRemove.size()!=0)
+        {
+            int slot=slotsToRemove.removeFirst();
+            table.removeCard(slot);
+            for(int i=0; i<players.length; i++)
+            {
+                players[i].removeSlotFromArr(slot); //update player its token has been removed from the card
+            }
         }
     }
 
@@ -117,19 +150,20 @@ public class Dealer implements Runnable {
      */
     private void placeCardsOnTable() {
         // TODO implement
+        shuffleDeck();
         int slot;
         int card;
         while(!deck.isEmpty() && table.countCards() < 12){
             card = deck.removeFirst();
             slot = findEmptySlot();
-            if(findEmptySlot() >= 0){
+            if(findEmptySlot() >= 0){  //the slot is a legal one
                 table.placeCard(card, slot);
             }
         }
     }
 
     private int findEmptySlot(){
-        for (int i = 0; i < players.length; i++) {
+        for (int i = 0; i < table.slotToCard.length; i++) {
             if(table.slotToCard[i] == null){
                 return i;
             }
@@ -141,7 +175,12 @@ public class Dealer implements Runnable {
      * Sleep for a fixed amount of time or until the thread is awakened for some purpose.
      */
     private void sleepUntilWokenOrTimeout() {
-        // TODO implement
+        while(System.currentTimeMillis()<reshuffleTime && playersToCheck.isEmpty())
+        {
+            try{
+                this.wait();
+            } catch(InterruptedException error){}
+        }
     }
 
     /**
@@ -156,6 +195,12 @@ public class Dealer implements Runnable {
      */
     private void removeAllCardsFromTable() {
         // TODO implement
+        for (int i = 0; i < NUM_OF_SLOTS; i++) {
+            if(!slotsToRemove.contains(i)){
+                slotsToRemove.add(i);
+            }
+        }
+        removeCardsFromTable();
     }
 
     /**
@@ -163,24 +208,77 @@ public class Dealer implements Runnable {
      */
     private void announceWinners() {
         // TODO implement
+        List<Player> winners = new LinkedList<>();
+        winners.add(players[0]);
+        for (Player cuPlayer : players) {
+            if(winners.getFirst().score() == cuPlayer.score()){
+                winners.add(cuPlayer);
+            }
+            else if(winners.getFirst().score() > cuPlayer.score()){
+                winners.clear();
+                winners.add(cuPlayer);
+            }
+        }
+        env.ui.announceWinner(playerListToIdArr(winners));
     }
 
-    private void addPlayerToCheck(Player player){
+    /**
+     * 
+     * @param lst - a list of Players
+     * @return an Arr of the player's ids
+     */
+    public int[] playerListToIdArr(List<Player> lst){
+        int[] res = new int[lst.size()];
+        for (int i = 0; i < res.length; i++) {
+            res[i] = lst.get(i).id;
+        }
+        return res;
+    }
+
+    public void addPlayerToCheck(Player player){
         playersToCheck.add(player);
     }
 
-    private boolean testSet(int[]cards){
+    public void checkPlayersSets(){
+        Player curPlayer;
+        int[] curSet;
+        while(playersToCheck.size() > 0){
+            curPlayer = playersToCheck.remove();
+            curSet = slotsToCards(setVecToArr(curPlayer.getSlotsVector()));
+            if(testSet(curSet)){
+                curPlayer.point();
+                env.ui.setScore(curPlayer.id, curPlayer.score());
+            }
+            else{
+                curPlayer.penalty();
+            }
+        }
+    }
+
+    /**
+     * 
+     * @param vec - a vector of Integers representing slots, size(vec) = 3
+     * @return an arr in size 3 of the slots
+     */
+    public int[] setVecToArr(Vector<Integer> vec){
+        int[] res = new int[3];
+        for (int i = 0; i < res.length; i++) {
+            res[i] = vec.get(i);
+        }
+        return res;
+    }
+
+    public boolean testSet(int[]cards){
        if(env.util.testSet(cards)){
         for (int i = 0; i < cards.length; i++) {
             slotsToRemove.add(table.cardToSlot[cards[i]]);
             return true;
         }
        }
-       return false;
-       
+       return false;   
     }
 
-    private int[] slotsToCards(int[]slots){
+    public int[] slotsToCards(int[]slots){
         int[]cards = new int[slots.length];
         for (int i = 0; i < cards.length; i++) {
             cards[i] = table.slotToCard[slots[i]];
@@ -188,11 +286,16 @@ public class Dealer implements Runnable {
         return cards;
     }
 
-    private int[] cardsToSlots(int[]cards){
+    public int[] cardsToSlots(int[]cards){
         int [] slots = new int[cards.length];
         for (int i = 0; i < slots.length; i++) {
             slots[i] = table.cardToSlot[cards[i]];
         }
         return slots;
     }
+
+    public void shuffleDeck(){
+        Collections.shuffle(deck);
+    }
+
 }

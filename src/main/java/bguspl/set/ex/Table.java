@@ -119,10 +119,13 @@ public class Table {
         } catch (InterruptedException ignored) {}
 
         // TODO implement
-        env.ui.removeCard(slot);
+        for (int i = 0; i < tokensOnTable.elementAt(slot).size(); i++) {
+            removeToken(tokensOnTable.elementAt(slot).removeFirst(), slot);
+        }
         //ask Yaniv
         cardToSlot[slotToCard[slot]] = null;
         slotToCard[slot] = null;
+        env.ui.removeCard(slot);
     }
 
     /**
@@ -148,4 +151,6 @@ public class Table {
         env.ui.removeToken(player, slot);
         return true;
     }
+
+
  }
