@@ -60,6 +60,8 @@ public class Player implements Runnable {
      */
     private volatile long freezeUntil;
     
+
+    
     /**
      * The current score of the player.
      */
@@ -78,12 +80,15 @@ public class Player implements Runnable {
 
     private Vector<Integer> slotsVector;
    
+   
      /*
       * the dealer of the game
       */
      private Dealer dealer;
 
      private Object lockForQueue;
+
+
 
 
 
@@ -181,7 +186,7 @@ public class Player implements Runnable {
     public void keyPressed(int slot) { //we implement
         try
         {  
-            if(System.currentTimeMillis()>freezeUntil) // if the player is blocked because of getting a penalty or a point
+             if(System.currentTimeMillis()>freezeUntil) // if the player is blocked because of getting a penalty or a point
             {
             incomingActions.put(slot);} //when the queue is full the thread will wait
         }
@@ -226,3 +231,4 @@ public class Player implements Runnable {
         return slotsVector;
      }
 }
+
