@@ -8,8 +8,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import java.util.concurrent.BlockingQueue;
 
-import java.util.Random;
-
 /**
  * This class manages the players' threads and data
  *
@@ -88,6 +86,7 @@ public class Player implements Runnable {
 
      private Object lockForQueue;
 
+     final int NUM_OF_SLOTS = 12;
 
 
 
@@ -158,7 +157,7 @@ public class Player implements Runnable {
         aiThread = new Thread(() -> {
             env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
-                int randomKey = (int)(Math.random()*12);
+                int randomKey = (int)(Math.random()*NUM_OF_SLOTS);
 
                 try { //we edit it
                     if(System.currentTimeMillis() > freezeUntil){

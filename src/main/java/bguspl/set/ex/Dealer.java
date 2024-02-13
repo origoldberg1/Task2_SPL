@@ -66,6 +66,8 @@ public class Dealer implements Runnable {
 
     final int NUM_OF_SLOTS = 12;
 
+    final int SIXTEY_SECONDS = 60000;
+
     public Dealer(Env env, Table table, Player[] players) {
         this.env = env;
         this.table = table;
@@ -153,7 +155,7 @@ public class Dealer implements Runnable {
         shuffleDeck();
         int slot;
         int card;
-        while(!deck.isEmpty() && table.countCards() < 12){
+        while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
             card = deck.removeFirst();
             slot = findEmptySlot();
             if(findEmptySlot() >= 0){  //the slot is a legal one
@@ -188,6 +190,15 @@ public class Dealer implements Runnable {
      */
     private void updateTimerDisplay(boolean reset) {
         // TODO implement
+        if(reset){
+            reshuffleTime = SIXTEY_SECONDS + System.currentTimeMillis(); 
+            env.ui.setCountdown(env.config.turnTimeoutMillis, false);
+        }
+        else{
+            long timeLeft = reshuffleTime - System.currentTimeMillis();
+            boolean warn = timeLeft < env.config.turnTimeoutWarningMillis;
+            env.ui.setCountdown(timeLeft, warn);
+        }
     }
 
     /**
