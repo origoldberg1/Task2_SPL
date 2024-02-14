@@ -63,6 +63,12 @@ public class Dealer implements Runnable {
      */
     private boolean needToReshufle;
 
+    /*
+     * we add this
+     * self thread
+     */
+
+    private Thread dealerThread;
 
     final int NUM_OF_SLOTS = 12;
 
@@ -111,6 +117,18 @@ public class Dealer implements Runnable {
         //     removeCardsFromTable();
         //     placeCardsOnTable();
         // }
+    }
+
+        /**
+     * Sleep for a fixed amount of time or until the thread is awakened for some purpose.
+     */
+    private void sleepUntilWokenOrTimeout() {
+        while(System.currentTimeMillis()<reshuffleTime && playersToCheck.isEmpty())
+        {
+            try{
+                this.wait();
+            } catch(InterruptedException error){}
+        }
     }
 
     /**
@@ -173,17 +191,6 @@ public class Dealer implements Runnable {
         return -1;
     }
 
-    /**
-     * Sleep for a fixed amount of time or until the thread is awakened for some purpose.
-     */
-    private void sleepUntilWokenOrTimeout() {
-        while(System.currentTimeMillis()<reshuffleTime && playersToCheck.isEmpty())
-        {
-            try{
-                this.wait();
-            } catch(InterruptedException error){}
-        }
-    }
 
     /**
      * Reset and/or update the countdown and the countdown display.
@@ -248,6 +255,7 @@ public class Dealer implements Runnable {
 
     public void addPlayerToCheck(Player player){
         playersToCheck.add(player);
+        dealerThread.interrupt(); //if dealer thread is sleeping we wake him up
     }
 
     public void checkPlayersSets(){

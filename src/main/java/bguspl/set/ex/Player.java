@@ -8,6 +8,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import java.util.concurrent.BlockingQueue;
 
+import java.util.Random;
+
 /**
  * This class manages the players' threads and data
  *
@@ -58,8 +60,6 @@ public class Player implements Runnable {
      */
     private volatile long freezeUntil;
     
-
-    
     /**
      * The current score of the player.
      */
@@ -78,16 +78,12 @@ public class Player implements Runnable {
 
     private Vector<Integer> slotsVector;
    
-   
      /*
       * the dealer of the game
       */
      private Dealer dealer;
 
      private Object lockForQueue;
-
-     final int NUM_OF_SLOTS = 12;
-
 
 
 
@@ -157,12 +153,11 @@ public class Player implements Runnable {
         aiThread = new Thread(() -> {
             env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
-                int randomKey = (int)(Math.random()*NUM_OF_SLOTS);
+                int randomKey = (int)(Math.random()*12);
 
                 try { //we edit it
-                    if(System.currentTimeMillis() > freezeUntil){
-                        incomingActions.put(randomKey);
-                    }
+                    if(System.currentTimeMillis()>freezeUntil)
+                    incomingActions.put(randomKey);
                 } catch (InterruptedException ignored) {}
             }
             env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
@@ -185,7 +180,7 @@ public class Player implements Runnable {
     public void keyPressed(int slot) { //we implement
         try
         {  
-             if(System.currentTimeMillis()>freezeUntil) // if the player is blocked because of getting a penalty or a point
+            if(System.currentTimeMillis()>freezeUntil) // if the player is blocked because of getting a penalty or a point
             {
             incomingActions.put(slot);} //when the queue is full the thread will wait
         }
@@ -202,6 +197,7 @@ public class Player implements Runnable {
         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
         env.ui.setScore(id, ++score);
         freezeUntil=System.currentTimeMillis()+env.config.pointFreezeMillis; //the player is blocked for input, see keyPresses method
+        env.ui.setFreeze(id, freezeUntil);
     }
 
     /**
@@ -209,6 +205,7 @@ public class Player implements Runnable {
      */
     public void penalty() {
         freezeUntil=System.currentTimeMillis()+env.config.penaltyFreezeMillis; //the player is blocked for input, see keyPresses method
+        env.ui.setFreeze(id, freezeUntil);
     }
 
     public int score() {
@@ -224,10 +221,6 @@ public class Player implements Runnable {
      public void addSlotToArr(int slot) //remove from slot Array 
      {
             slotsVector.add(slot);  
-     }
-
-     public Vector<Integer> getSlotsVector(){
-        return slotsVector;
      }
 }
 
