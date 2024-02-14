@@ -8,7 +8,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import java.util.concurrent.BlockingQueue;
 
-import java.util.Random;
 
 /**
  * This class manages the players' threads and data
@@ -85,7 +84,7 @@ public class Player implements Runnable {
 
      private Object lockForQueue;
 
-
+     private final int THREE = 3;
 
     /**
      * The class constructor.
@@ -102,7 +101,7 @@ public class Player implements Runnable {
         this.table = table;
         this.id = id;
         this.human = human;
-        this.incomingActions = new ArrayBlockingQueue<>(3);
+        this.incomingActions = new ArrayBlockingQueue<>(THREE);
         freezeUntil= System.currentTimeMillis()-1;
         
     }
@@ -122,20 +121,21 @@ public class Player implements Runnable {
                 {
                     int theSlot=-1; // just for compilation, is gonna be changed when there is something in the queue
                     try{
-                    theSlot=incomingActions.take(); //wait until the queue isn't empty
+                        theSlot=incomingActions.take(); //wait until the queue isn't empty
                     }
                     catch (InterruptedException ignored){}
-                    if (slotsVector.contains(theSlot))
-                    {
+                    if (slotsVector.contains(theSlot)){
                         table.removeToken(id, theSlot);
                         removeSlotFromArr(theSlot); //removes the theSlot from the array
                     }
                     else{
                         table.placeToken(id, theSlot);
                         addSlotToArr(theSlot); //place the theSlot from the array
-                        if (slotsVector.size()==3)
-                        {
-                        dealer.addPlayerToCheck(this); // calling the dealer to check its slots
+                        if (slotsVector.size()==THREE){
+                            dealer.addPlayerToCheck(this); // calling the dealer to check its slots
+                            try {
+                                dealer.getDealerThread().interrupt();
+                            } catch (Exception e) {}
                         }
                     }             
                 }
@@ -177,12 +177,14 @@ public class Player implements Runnable {
      *
      * @param slot - the slot corresponding to the key pressed.
      */
-    public void keyPressed(int slot) { //we implement
+    public void keyPressed(int slot) { 
+        //TODO implement
         try
         {  
             if(System.currentTimeMillis()>freezeUntil) // if the player is blocked because of getting a penalty or a point
             {
-            incomingActions.put(slot);} //when the queue is full the thread will wait
+                incomingActions.put(slot);//when the queue is full the thread will wait
+            } 
         }
         catch(InterruptedException ignored){}
     }

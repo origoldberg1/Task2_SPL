@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -79,6 +80,11 @@ public class Dealer implements Runnable {
         this.table = table;
         this.players = players;
         deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
+        this.terminate = false;
+        this.slotsToRemove = new Vector<>();
+        this.playersToCheck = new ArrayBlockingQueue<>(players.length);
+        needToReshufle =false;
+        dealerThread = Thread.currentThread();
     }
 
     /**
@@ -90,7 +96,7 @@ public class Dealer implements Runnable {
         while (!shouldFinish()) {
             placeCardsOnTable();
             timerLoop(); //self mark- should do things until we need to rersheufle or check set
-            updateTimerDisplay(false);
+            //updateTimerDisplay(true);
             removeAllCardsFromTable();
         }
         announceWinners();
@@ -107,8 +113,9 @@ public class Dealer implements Runnable {
             if(!playersToCheck.isEmpty()) 
             {
                 checkPlayersSets();
-                updateTimerDisplay(false);
             }
+            updateTimerDisplay(true);
+
         }
         // the next lines were given
         // while (!terminate && System.currentTimeMillis() < reshuffleTime) {
@@ -123,10 +130,10 @@ public class Dealer implements Runnable {
      * Sleep for a fixed amount of time or until the thread is awakened for some purpose.
      */
     private void sleepUntilWokenOrTimeout() {
-        while(System.currentTimeMillis()<reshuffleTime && playersToCheck.isEmpty())
-        {
+        //while(System.currentTimeMillis()<reshuffleTime && playersToCheck.isEmpty())
+        synchronized(this){
             try{
-                this.wait();
+                Thread.sleep(reshuffleTime - System.currentTimeMillis());
             } catch(InterruptedException error){}
         }
     }
@@ -161,7 +168,7 @@ public class Dealer implements Runnable {
             for(int i=0; i<players.length; i++)
             {
                 players[i].removeSlotFromArr(slot); //update player its token has been removed from the card
-            }
+            }   
         }
     }
 
@@ -315,6 +322,10 @@ public class Dealer implements Runnable {
 
     public void shuffleDeck(){
         Collections.shuffle(deck);
+    }
+
+    public Thread getDealerThread(){
+        return dealerThread;
     }
 
 }
