@@ -82,7 +82,7 @@ public class Player implements Runnable {
       */
      private Dealer dealer;
 
-     private Object lockForQueue;
+     private Object lockForPlayer;
 
      private final int THREE = 3;
 
@@ -117,18 +117,31 @@ public class Player implements Runnable {
 
         while (!terminate) {
                 
-                synchronized (lockForQueue)
+                synchronized (lockForPlayer)
                 {
                     int theSlot=-1; // just for compilation, is gonna be changed when there is something in the queue
                     try{
                         theSlot=incomingActions.take(); //wait until the queue isn't empty
                     }
                     catch (InterruptedException ignored){}
-                    if (slotsVector.contains(theSlot)){
+                    if (slotsVector.contains(theSlot)) //we need to remove token
+                    {
+                        while(dealer.DealershouldReshuffle) //TODO check This way
+                        {
+                            try{
+                            lockForPlayer.wait();}
+                            catch(InterruptedException e1){};
+                        }
                         table.removeToken(id, theSlot);
                         removeSlotFromArr(theSlot); //removes the theSlot from the array
                     }
-                    else{
+                    else{ //we need to remove token
+                        while(dealer.DealershouldReshuffle)
+                        {
+                            try{
+                            lockForPlayer.wait();}
+                            catch(InterruptedException e1){};
+                        }
                         table.placeToken(id, theSlot);
                         addSlotToArr(theSlot); //place the theSlot from the array
                         if (slotsVector.size()==THREE){
@@ -223,6 +236,15 @@ public class Player implements Runnable {
      public void addSlotToArr(int slot) //remove from slot Array 
      {
             slotsVector.add(slot);  
+     }
+     /**
+      *we add this method
+      *accesible only by dealer thread
+      *notify the playerThread is waiting on lockPlayer (because now dealer isn't on table)
+      */
+     public void notifyPlayerThread()
+     {
+        lockForPlayer.notifyAll();
      }
 }
 
