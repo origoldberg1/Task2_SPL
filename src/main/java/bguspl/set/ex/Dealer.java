@@ -56,12 +56,12 @@ public class Dealer implements Runnable {
      */
     private BlockingQueue<Player> playersToCheck;
 
-    /**
+    /** 
      * we add this
      * holds true if dealer need to reshufle
-     * used to understand if we need to reshufle or check sets, when exiting from timerloop 
-     */
-    private boolean needToReshufle;
+     * used to understand if we need to reshufle 
+    */
+    public volatile boolean DealershouldReshuffle;
 
     /*
      * we add this
@@ -76,6 +76,7 @@ public class Dealer implements Runnable {
 
     public Dealer(Env env, Table table, Player[] players) {
         this.env = env;
+        this.DealershouldReshuffle=false;
         this.table = table;
         this.players = players;
         deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
@@ -89,7 +90,7 @@ public class Dealer implements Runnable {
         env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
         while (!shouldFinish()) {
             placeCardsOnTable();
-            timerLoop(); //self mark- should do things until we need to rersheufle or check set
+            timerLoop(); //self mark- should do things until we need to rersheufle 
             updateTimerDisplay(false);
             removeAllCardsFromTable();
         }
@@ -101,14 +102,9 @@ public class Dealer implements Runnable {
      * The inner loop of the dealer thread that runs as long as the countdown did not time out.
      */
     private void timerLoop() {
-        while(System.currentTimeMillis()<reshuffleTime)
+        while(!DealershouldReshuffle)
         {
             sleepUntilWokenOrTimeout();
-            if(!playersToCheck.isEmpty()) 
-            {
-                checkPlayersSets();
-                updateTimerDisplay(false);
-            }
         }
         // the next lines were given
         // while (!terminate && System.currentTimeMillis() < reshuffleTime) {
@@ -119,16 +115,14 @@ public class Dealer implements Runnable {
         // }
     }
 
-        /**
+    /**
      * Sleep for a fixed amount of time or until the thread is awakened for some purpose.
      */
-    private void sleepUntilWokenOrTimeout() {
-        while(System.currentTimeMillis()<reshuffleTime && playersToCheck.isEmpty())
-        {
+    private void sleepUntilWokenOrTimeout() {      
             try{
-                this.wait();
-            } catch(InterruptedException error){}
-        }
+                Thread.sleep(env.config.turnTimeoutMillis);
+                DealershouldReshuffle=true;
+            } catch(InterruptedException error){checkPlayersSets();}
     }
 
     /**
@@ -163,6 +157,7 @@ public class Dealer implements Runnable {
                 players[i].removeSlotFromArr(slot); //update player its token has been removed from the card
             }
         }
+
     }
 
     /**
@@ -219,6 +214,8 @@ public class Dealer implements Runnable {
             }
         }
         removeCardsFromTable();
+        DealershouldReshuffle=false;
+        notifyPlayers();
     }
 
     /**
@@ -316,5 +313,14 @@ public class Dealer implements Runnable {
     public void shuffleDeck(){
         Collections.shuffle(deck);
     }
+
+    public void notifyPlayers()
+    {
+        for(Player player:players)
+        {
+            player.notifyPlayerThread();
+        }
+    }
+
 
 }
