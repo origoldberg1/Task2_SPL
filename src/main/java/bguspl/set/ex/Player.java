@@ -103,6 +103,9 @@ public class Player implements Runnable {
         this.human = human;
         this.incomingActions = new ArrayBlockingQueue<>(THREE);
         freezeUntil= System.currentTimeMillis()-1;
+        this.lockForPlayer = new Object();
+        this.slotsVector = new Vector<>();
+
         
     }
 
@@ -119,27 +122,27 @@ public class Player implements Runnable {
                 
                 synchronized (lockForPlayer)
                 {
-                    int theSlot=-1; // just for compilation, is gonna be changed when there is something in the queue
+                    int theSlot = -1; // just for compilation, is gonna be changed when there is something in the queue
                     try{
                         theSlot=incomingActions.take(); //wait until the queue isn't empty
                     }
                     catch (InterruptedException ignored){}
                     if (slotsVector.contains(theSlot)) //we need to remove token
                     {
-                        while(dealer.DealershouldReshuffle) //TODO check This way
+                        while(dealer.dealerShouldReshuffle) //TODO check This way
                         {
                             try{
-                            lockForPlayer.wait();}
+                                lockForPlayer.wait();}
                             catch(InterruptedException e1){};
                         }
                         table.removeToken(id, theSlot);
                         removeSlotFromArr(theSlot); //removes the theSlot from the array
                     }
-                    else{ //we need to remove token
-                        while(dealer.DealershouldReshuffle)
+                    else{ //we need to place token
+                        while(dealer.dealerShouldReshuffle)
                         {
                             try{
-                            lockForPlayer.wait();}
+                                lockForPlayer.wait();}
                             catch(InterruptedException e1){};
                         }
                         table.placeToken(id, theSlot);
@@ -228,12 +231,14 @@ public class Player implements Runnable {
         
     }
 
-     public void removeSlotFromArr(int slot) //remove from slot Array 
+     public void removeSlotFromArr(int slot) //remove from slot Vector 
      {
-            slotsVector.remove(slot);  
+        if(slotsVector.contains(slot)){
+            slotsVector.remove(slotsVector.indexOf(slot));  
+        }
      }
 
-     public void addSlotToArr(int slot) //remove from slot Array 
+     public void addSlotToArr(int slot) //remove from slot Vector
      {
             slotsVector.add(slot);  
      }
@@ -242,8 +247,7 @@ public class Player implements Runnable {
       *accesible only by dealer thread
       *notify the playerThread is waiting on lockPlayer (because now dealer isn't on table)
       */
-     public void notifyPlayerThread()
-     {
+     public void notifyPlayerThread(){
         lockForPlayer.notifyAll();
      }
 }

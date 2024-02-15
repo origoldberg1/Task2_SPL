@@ -39,6 +39,7 @@ public class Table {
      */
     protected Vector<Vector<Integer>> tokensOnTable;
 
+    private final int NUM_OF_SLOTS = 12;
 
     /**
      * Constructor for testing.
@@ -62,6 +63,10 @@ public class Table {
     public Table(Env env) {
 
         this(env, new Integer[env.config.tableSize], new Integer[env.config.deckSize]);
+        this.tokensOnTable = new Vector<>();
+        for (int i = 0; i < NUM_OF_SLOTS; i++) {
+            this.tokensOnTable.add(new Vector<>());
+        }
     }
 
     /**
@@ -147,7 +152,9 @@ public class Table {
      */
     public synchronized boolean removeToken(int player, int slot) {
         // TODO implement
-        tokensOnTable.elementAt(slot).remove(player);
+        if(tokensOnTable.elementAt(slot).contains(player)){
+            tokensOnTable.elementAt(slot).remove(tokensOnTable.elementAt(slot).indexOf(player));
+        }
         env.ui.removeToken(player, slot);
         return true;
     }
