@@ -158,6 +158,4 @@ public class Table {
         env.ui.removeToken(player, slot);
         return true;
     }
-
-
  }

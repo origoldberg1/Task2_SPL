@@ -56,24 +56,17 @@ public class Dealer implements Runnable {
      */
     private BlockingQueue<Player> playersToCheck;
 
-    /** 
-     * we add this
-     * holds true if dealer need to reshufle
-     * used to understand if we need to reshufle 
-    */
     public volatile boolean dealerShouldReshuffle;
-
-
-    /*
-     * we add this
-     * self thread
-     */
 
     private Thread dealerThread;
 
     final int NUM_OF_SLOTS = 12;
 
     final int SIXTEY_SECONDS = 60000;
+
+    final int ONE_SECOND = 1000;
+
+    final int THREE = 3;
 
     public Dealer(Env env, Table table, Player[] players) {
         this.env = env;
@@ -84,8 +77,8 @@ public class Dealer implements Runnable {
         this.terminate = false;
         this.slotsToRemove = new Vector<>();
         this.playersToCheck = new ArrayBlockingQueue<>(players.length);
-        this.dealerShouldReshuffle =false;
-        this.dealerThread = Thread.currentThread();
+        this.dealerShouldReshuffle =true;
+        this.dealerThread = null;
     }
 
     /**
@@ -93,6 +86,7 @@ public class Dealer implements Runnable {
      */
     @Override
     public void run() {
+        dealerThread = Thread.currentThread();
         env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
         for (Player player : players) {
             //Thread playerThread = new Thread(player);
@@ -102,6 +96,7 @@ public class Dealer implements Runnable {
         }
         while (!shouldFinish()) {
             placeCardsOnTable();
+            dealerShouldReshuffle=false;
             updateTimerDisplay(true);
             timerLoop(); //self mark- should do things until we need to rersheufle 
             removeAllCardsFromTable();
@@ -131,14 +126,14 @@ public class Dealer implements Runnable {
      * Sleep for a fixed amount of time or until the thread is awakened for some purpose.
      */
     private void sleepUntilWokenOrTimeout() {      
-            try{
-                Thread.sleep(1000);
-                dealerShouldReshuffle = System.currentTimeMillis() >= reshuffleTime;
-                updateTimerDisplay(dealerShouldReshuffle);
-            } 
-            catch(InterruptedException error)
-            {System.out.println("third token");
-                checkPlayersSets();}
+        try{
+            Thread.sleep(ONE_SECOND);
+            dealerShouldReshuffle = System.currentTimeMillis() >= reshuffleTime;
+            updateTimerDisplay(dealerShouldReshuffle);
+        } 
+        catch(InterruptedException error){
+            checkPlayersSets();
+        }
     }
 
     /**
@@ -146,7 +141,6 @@ public class Dealer implements Runnable {
      */
     public void terminate() {
         // TODO implement
-        terminate=true;
         env.ui.dispose(); //closes window
     }
 
@@ -183,13 +177,30 @@ public class Dealer implements Runnable {
     private void placeCardsOnTable() {
         // TODO implement
         shuffleDeck();
-        int slot;
-        int card;
-        while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
-            card = deck.removeFirst();
-            slot = findEmptySlot();
-            if(findEmptySlot() >= 0){  //the slot is a legal one
-                table.placeCard(card, slot);
+        if(table.countCards() == 0){
+            placeTwelveCardsOnTable();
+        }
+        else{
+            int slot;
+            int card;
+            while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
+                card = deck.removeFirst();
+                slot = findEmptySlot();
+                if(findEmptySlot() >= 0){  //the slot is a legal one
+                    table.placeCard(card, slot);
+                }
+            }
+        }
+    }
+    private void placeTwelveCardsOnTable(){
+        Vector<Integer> oneToTwelve = new Vector<Integer>();
+        for (int i = 0; i < NUM_OF_SLOTS; i++) {
+            oneToTwelve.add(i);
+        }
+        Collections.shuffle(oneToTwelve);
+        for (Integer slot : oneToTwelve) {
+            if(!deck.isEmpty()){
+                table.placeCard(deck.removeFirst(), slot);
             }
         }
     }
@@ -210,7 +221,7 @@ public class Dealer implements Runnable {
     private void updateTimerDisplay(boolean reset) {
         // TODO implement
         if(reset){
-            reshuffleTime = 5000 + System.currentTimeMillis(); 
+            reshuffleTime = SIXTEY_SECONDS + System.currentTimeMillis(); 
             env.ui.setCountdown(env.config.turnTimeoutMillis, false);
         }
         else{
@@ -269,7 +280,9 @@ public class Dealer implements Runnable {
     }
 
     public void addPlayerToCheck(Player player){
-        playersToCheck.add(player);
+        if(!playersToCheck.contains(player)){
+            playersToCheck.add(player);
+        }
         dealerThread.interrupt(); //if dealer thread is sleeping we wake him up
     }
 
@@ -283,8 +296,7 @@ public class Dealer implements Runnable {
                 removeCardsFromTable();
                 placeCardsOnTable();
                 curPlayer.point();
-                env.ui.setScore(curPlayer.id, curPlayer.score());
-                updateTimerDisplay(false);
+                updateTimerDisplay(true);
             }
             else{
                 curPlayer.penalty();
@@ -298,7 +310,7 @@ public class Dealer implements Runnable {
      * @return an arr in size 3 of the slots
      */
     public int[] setVecToArr(Vector<Integer> vec){
-        int[] res = new int[3];
+        int[] res = new int[THREE];
         for (int i = 0; i < res.length; i++) {
             res[i] = vec.get(i);
         }
@@ -332,7 +344,7 @@ public class Dealer implements Runnable {
     }
 
     public void shuffleDeck(){
-        Collections.shuffle(deck);
+        //Collections.shuffle(deck);
     }
 
     public Thread getDealerThread(){

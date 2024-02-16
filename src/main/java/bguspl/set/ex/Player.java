@@ -87,6 +87,8 @@ public class Player implements Runnable {
 
      private final int THREE = 3;
 
+     final int ONE_SECOND = 1000;
+
     /**
      * The class constructor.
      *
@@ -129,36 +131,39 @@ public class Player implements Runnable {
             //     }
             //     catch(InterruptedException e1){};
             // }    
-                int theSlot = -1; // just for compilation, is gonna be changed when there is something in the queue
-                try{
-                    theSlot=incomingActions.take(); //wait until the queue isn't empty
-                }
-                catch (InterruptedException ignored){}
-                if (slotsVector.contains(theSlot)) //we need to remove token
+            int theSlot = -1; // just for compilation, is gonna be changed when there is something in the queue
+            try{
+                theSlot=incomingActions.take(); //wait until the queue isn't empty
+            }
+            catch (InterruptedException ignored){}
+            if (slotsVector.contains(theSlot)) //we need to remove token
+            {
+                while(dealer.dealerShouldReshuffle) //TODO check This way
                 {
-                    while(dealer.dealerShouldReshuffle) //TODO check This way
-                    {
-                        try{
-                            synchronized(lockForPlayer){
-                                lockForPlayer.wait();
-                            }
-                        } 
-                        catch(InterruptedException e1){};
-                    }
-                    table.removeToken(id, theSlot);
-                    removeSlotFromArr(theSlot); //removes the theSlot from the array
+                    try{
+                        synchronized(lockForPlayer){
+                            lockForPlayer.wait();
+                        }
+                    } 
+                    catch(InterruptedException e1){};
                 }
-                else{ //we need to place token
-
-                    table.placeToken(id, theSlot);
-                    addSlotToArr(theSlot); //place the theSlot from the array
-                    if (slotsVector.size()==THREE){
-                        dealer.addPlayerToCheck(this); // calling the dealer to check its slots
-                        try {
-                            dealer.getDealerThread().interrupt();
-                        } catch (Exception e) {}
+                table.removeToken(id, theSlot);
+                removeSlotFromArr(theSlot); //removes the theSlot from the array
+            }
+            else{ //we need to place token
+                if(slotsVector.size() != 3){
+                    if(table.slotToCard[theSlot] != null){
+                        table.placeToken(id, theSlot);
+                        addSlotToArr(theSlot); //place the theSlot from the array
+                        if (slotsVector.size()==THREE){
+                            dealer.addPlayerToCheck(this); // calling the dealer to check its slots
+                            try {
+                                dealer.getDealerThread().interrupt();
+                            } catch (Exception e) {}
+                        }
                     }
-                }             
+                }
+            }             
         }
         if (!human) try { aiThread.join(); } catch (InterruptedException ignored) {}
         env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");    
@@ -216,27 +221,44 @@ public class Player implements Runnable {
      * @post - the player's score is updated in the ui.
      */
     public void point() {
-        int ignored = table.countCards(); // this part is just for demonstration in the unit tests
+         int ignored = table.countCards(); // this part is just for demonstration in the unit tests
+         freezeUntil=System.currentTimeMillis()+env.config.pointFreezeMillis; //the player is blocked for input, see keyPresses method
+         env.ui.setFreeze(id, env.config.pointFreezeMillis);
+         int cnt = 0;
+         while (System.currentTimeMillis() <= freezeUntil) {
+             cnt ++;
+             try {
+                 Thread.sleep(ONE_SECOND);
+             } catch (Exception e) {}
+             env.ui.setFreeze(id, env.config.pointFreezeMillis - ONE_SECOND*cnt);            
+         }
         env.ui.setScore(id, ++score);
-        freezeUntil=System.currentTimeMillis()+env.config.pointFreezeMillis; //the player is blocked for input, see keyPresses method
-        env.ui.setFreeze(id, freezeUntil);
-    }
+    }        
+
+        
 
     /**
      * Penalize a player and perform other related actions.
      */
     public void penalty() {
         freezeUntil=System.currentTimeMillis()+env.config.penaltyFreezeMillis; //the player is blocked for input, see keyPresses method
-        env.ui.setFreeze(id, freezeUntil);
+        env.ui.setFreeze(id, env.config.penaltyFreezeMillis);
+        int cnt = 0;
+        while (System.currentTimeMillis() <= freezeUntil) {
+            cnt ++;
+            try {
+                Thread.sleep(ONE_SECOND);
+            } catch (Exception e) {}
+            env.ui.setFreeze(id, env.config.penaltyFreezeMillis - ONE_SECOND*cnt);            
+        }
+
     }
 
     public int score() {
         return score;
-        
     }
 
-     public void removeSlotFromArr(int slot) //remove from slot Vector 
-     {
+     public void removeSlotFromArr(int slot){ //remove from slot Vector 
         if(slotsVector.contains(slot)){
             slotsVector.remove(slotsVector.indexOf(slot));  
         }
