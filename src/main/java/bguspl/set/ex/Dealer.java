@@ -95,9 +95,10 @@ public class Dealer implements Runnable {
     public void run() {
         env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
         for (Player player : players) {
-            Thread playerThread = new Thread(player);
-            player.setPlayerThread(playerThread);
-            playerThread.start();
+            //Thread playerThread = new Thread(player);
+            //player.setPlayerThread(playerThread);
+            //playerThread.start();
+            player.StartPlayerThread();
         }
         while (!shouldFinish()) {
             placeCardsOnTable();
@@ -116,7 +117,6 @@ public class Dealer implements Runnable {
         while(!dealerShouldReshuffle)
         {
             sleepUntilWokenOrTimeout();
-            updateTimerDisplay(false);
         }
         // the next lines were given
         // while (!terminate && System.currentTimeMillis() < reshuffleTime) {
@@ -132,9 +132,11 @@ public class Dealer implements Runnable {
      */
     private void sleepUntilWokenOrTimeout() {      
             try{
-                Thread.sleep(env.config.turnTimeoutMillis);
-                dealerShouldReshuffle=true;
-            } catch(InterruptedException error){checkPlayersSets();}
+                Thread.sleep(1000);
+                dealerShouldReshuffle = System.currentTimeMillis() >= reshuffleTime;
+                updateTimerDisplay(dealerShouldReshuffle);
+            } 
+            catch(InterruptedException error){checkPlayersSets();}
     }
 
     /**
@@ -205,7 +207,7 @@ public class Dealer implements Runnable {
     private void updateTimerDisplay(boolean reset) {
         // TODO implement
         if(reset){
-            reshuffleTime = SIXTEY_SECONDS + System.currentTimeMillis(); 
+            reshuffleTime = 5000 + System.currentTimeMillis(); 
             env.ui.setCountdown(env.config.turnTimeoutMillis, false);
         }
         else{
@@ -304,8 +306,8 @@ public class Dealer implements Runnable {
        if(env.util.testSet(cards)){
         for (int i = 0; i < cards.length; i++) {
             slotsToRemove.add(table.cardToSlot[cards[i]]);
-            return true;
         }
+        return true;
        }
        return false;   
     }
@@ -334,11 +336,11 @@ public class Dealer implements Runnable {
         return dealerThread;
     }
 
-    public void notifyPlayers()
-    {
-        for(Player player:players)
-        {
-            player.notifyPlayerThread();
+    public void notifyPlayers(){
+        for(Player player:players){
+            synchronized(player.getLockForPlayer()){
+                player.getLockForPlayer().notifyAll();
+            }
         }
     }
 

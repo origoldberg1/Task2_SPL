@@ -120,42 +120,45 @@ public class Player implements Runnable {
         if (!human) createArtificialIntelligence();
 
         while (!terminate) {
-                
-                synchronized (lockForPlayer)
-                {
-                    int theSlot = -1; // just for compilation, is gonna be changed when there is something in the queue
-                    try{
-                        theSlot=incomingActions.take(); //wait until the queue isn't empty
+            while(dealer.dealerShouldReshuffle)
+            {
+                try{
+                    synchronized(lockForPlayer){
+                        lockForPlayer.wait();
                     }
-                    catch (InterruptedException ignored){}
-                    if (slotsVector.contains(theSlot)) //we need to remove token
-                    {
-                        while(dealer.dealerShouldReshuffle) //TODO check This way
-                        {
-                            try{
-                                lockForPlayer.wait();}
-                            catch(InterruptedException e1){};
-                        }
-                        table.removeToken(id, theSlot);
-                        removeSlotFromArr(theSlot); //removes the theSlot from the array
-                    }
-                    else{ //we need to place token
-                        while(dealer.dealerShouldReshuffle)
-                        {
-                            try{
-                                lockForPlayer.wait();}
-                            catch(InterruptedException e1){};
-                        }
-                        table.placeToken(id, theSlot);
-                        addSlotToArr(theSlot); //place the theSlot from the array
-                        if (slotsVector.size()==THREE){
-                            dealer.addPlayerToCheck(this); // calling the dealer to check its slots
-                            try {
-                                dealer.getDealerThread().interrupt();
-                            } catch (Exception e) {}
-                        }
-                    }             
                 }
+                catch(InterruptedException e1){};
+            }    
+                int theSlot = -1; // just for compilation, is gonna be changed when there is something in the queue
+                try{
+                    theSlot=incomingActions.take(); //wait until the queue isn't empty
+                }
+                catch (InterruptedException ignored){}
+                if (slotsVector.contains(theSlot)) //we need to remove token
+                {
+                    while(dealer.dealerShouldReshuffle) //TODO check This way
+                    {
+                        try{
+                            synchronized(lockForPlayer){
+                                lockForPlayer.wait();
+                            }
+                        } 
+                        catch(InterruptedException e1){};
+                    }
+                    table.removeToken(id, theSlot);
+                    removeSlotFromArr(theSlot); //removes the theSlot from the array
+                }
+                else{ //we need to place token
+
+                    table.placeToken(id, theSlot);
+                    addSlotToArr(theSlot); //place the theSlot from the array
+                    if (slotsVector.size()==THREE){
+                        dealer.addPlayerToCheck(this); // calling the dealer to check its slots
+                        try {
+                            dealer.getDealerThread().interrupt();
+                        } catch (Exception e) {}
+                    }
+                }             
         }
         if (!human) try { aiThread.join(); } catch (InterruptedException ignored) {}
         env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");    
@@ -239,21 +242,8 @@ public class Player implements Runnable {
         }
      }
 
-     public void addSlotToArr(int slot) //remove from slot Vector
-     {
+     public void addSlotToArr(int slot){ //remove from slot Vecto{
             slotsVector.add(slot);  
-     }
-     /**
-      *we add this method
-      *accesible only by dealer thread
-      *notify the playerThread is waiting on lockPlayer (because now dealer isn't on table)
-      */
-     public void notifyPlayerThread(){
-        synchronized(lockForPlayer)
-        {
-            lockForPlayer.notifyAll();
-            playerThread.notifyAll();
-        }
      }
 
      public void setPlayerThread(Thread playerThread) {
@@ -262,6 +252,20 @@ public class Player implements Runnable {
 
     public Vector<Integer> getSlotsVector(){
         return slotsVector;
+    }
+    
+    public void StartPlayerThread()
+    {
+        playerThread=new Thread(this);
+        playerThread.start();
+    }
+
+    public Object getLockForPlayer(){
+        return lockForPlayer;
+    }
+
+    public Thread getPlayerThread(){
+        return playerThread;
     }
 }
 
