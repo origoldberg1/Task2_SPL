@@ -136,7 +136,9 @@ public class Dealer implements Runnable {
                 dealerShouldReshuffle = System.currentTimeMillis() >= reshuffleTime;
                 updateTimerDisplay(dealerShouldReshuffle);
             } 
-            catch(InterruptedException error){checkPlayersSets();}
+            catch(InterruptedException error)
+            {System.out.println("third token");
+                checkPlayersSets();}
     }
 
     /**
@@ -169,6 +171,7 @@ public class Dealer implements Runnable {
             for(int i=0; i<players.length; i++)
             {
                 players[i].removeSlotFromArr(slot); //update player its token has been removed from the card
+                table.removeToken(players[i].id, slot);
             }   
         }
 
@@ -230,7 +233,7 @@ public class Dealer implements Runnable {
         Collections.shuffle(slotsToRemove);
         removeCardsFromTable();
         dealerShouldReshuffle=false;
-        notifyPlayers();
+        //notifyPlayers();
     }
 
     /**
@@ -343,6 +346,4 @@ public class Dealer implements Runnable {
             }
         }
     }
-
-
 }

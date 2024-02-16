@@ -120,15 +120,15 @@ public class Player implements Runnable {
         if (!human) createArtificialIntelligence();
 
         while (!terminate) {
-            while(dealer.dealerShouldReshuffle)
-            {
-                try{
-                    synchronized(lockForPlayer){
-                        lockForPlayer.wait();
-                    }
-                }
-                catch(InterruptedException e1){};
-            }    
+            // while(dealer.dealerShouldReshuffle)
+            // {
+            //     try{
+            //         synchronized(lockForPlayer){
+            //             lockForPlayer.wait();
+            //         }
+            //     }
+            //     catch(InterruptedException e1){};
+            // }    
                 int theSlot = -1; // just for compilation, is gonna be changed when there is something in the queue
                 try{
                     theSlot=incomingActions.take(); //wait until the queue isn't empty
@@ -201,7 +201,7 @@ public class Player implements Runnable {
         //TODO implement
         try
         {  
-            if(System.currentTimeMillis()>freezeUntil) // if the player is blocked because of getting a penalty or a point
+            if(System.currentTimeMillis()>freezeUntil && !dealer.dealerShouldReshuffle) // if the player is blocked because of getting a penalty or a point
             {
                 incomingActions.put(slot);//when the queue is full the thread will wait
             } 
