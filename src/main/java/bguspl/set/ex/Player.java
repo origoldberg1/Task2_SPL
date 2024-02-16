@@ -37,6 +37,7 @@ public class Player implements Runnable {
      */
     private Thread playerThread;
 
+
     /**
      * The thread of the AI (computer) player (an additional thread used to generate key presses).
      */
@@ -248,7 +249,19 @@ public class Player implements Runnable {
       *notify the playerThread is waiting on lockPlayer (because now dealer isn't on table)
       */
      public void notifyPlayerThread(){
-        lockForPlayer.notifyAll();
+        synchronized(lockForPlayer)
+        {
+            lockForPlayer.notifyAll();
+            playerThread.notifyAll();
+        }
      }
+
+     public void setPlayerThread(Thread playerThread) {
+        this.playerThread = playerThread;
+    }
+
+    public Vector<Integer> getSlotsVector(){
+        return slotsVector;
+    }
 }
 

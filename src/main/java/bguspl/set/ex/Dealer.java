@@ -4,7 +4,6 @@ import bguspl.set.Env;
 
 import static java.lang.String.format;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -64,6 +63,7 @@ public class Dealer implements Runnable {
     */
     public volatile boolean dealerShouldReshuffle;
 
+
     /*
      * we add this
      * self thread
@@ -80,13 +80,12 @@ public class Dealer implements Runnable {
         this.dealerShouldReshuffle=false;
         this.table = table;
         this.players = players;
-        deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
+        this.deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
         this.terminate = false;
         this.slotsToRemove = new Vector<>();
         this.playersToCheck = new ArrayBlockingQueue<>(players.length);
-        dealerShouldReshuffle =false;
-        dealerThread = Thread.currentThread();
-
+        this.dealerShouldReshuffle =false;
+        this.dealerThread = Thread.currentThread();
     }
 
     /**
@@ -97,12 +96,13 @@ public class Dealer implements Runnable {
         env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
         for (Player player : players) {
             Thread playerThread = new Thread(player);
+            player.setPlayerThread(playerThread);
             playerThread.start();
         }
         while (!shouldFinish()) {
             placeCardsOnTable();
-            timerLoop(); //self mark- should do things until we need to rersheufle 
             updateTimerDisplay(true);
+            timerLoop(); //self mark- should do things until we need to rersheufle 
             removeAllCardsFromTable();
         }
         announceWinners();
@@ -116,6 +116,7 @@ public class Dealer implements Runnable {
         while(!dealerShouldReshuffle)
         {
             sleepUntilWokenOrTimeout();
+            updateTimerDisplay(false);
         }
         // the next lines were given
         // while (!terminate && System.currentTimeMillis() < reshuffleTime) {
@@ -224,6 +225,7 @@ public class Dealer implements Runnable {
                 slotsToRemove.add(i);
             }
         }
+        Collections.shuffle(slotsToRemove);
         removeCardsFromTable();
         dealerShouldReshuffle=false;
         notifyPlayers();
@@ -273,8 +275,11 @@ public class Dealer implements Runnable {
             curPlayer = playersToCheck.remove();
             curSet = slotsToCards(setVecToArr(curPlayer.getSlotsVector()));
             if(testSet(curSet)){
+                removeCardsFromTable();
+                placeCardsOnTable();
                 curPlayer.point();
                 env.ui.setScore(curPlayer.id, curPlayer.score());
+                updateTimerDisplay(false);
             }
             else{
                 curPlayer.penalty();
