@@ -151,7 +151,7 @@ public class Player implements Runnable {
                     System.out.println("Player " + this.id + " inCheckByDealer=false");                         
                     inCheckByDealer = false; 
                 } 
-                else if (! inCheckByDealer) {
+                else if (!inCheckByDealer) {
                     if (slotsVector.contains(action)){ //we need to remove token
                         // while(dealer.dealerShouldReshuffle) //TODO check This way
                         // {

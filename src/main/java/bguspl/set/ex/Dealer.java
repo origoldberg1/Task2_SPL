@@ -282,7 +282,9 @@ public class Dealer implements Runnable {
     public void addPlayerToCheck(Player player){
         try {
             playersToCheck.put(player);
-        } catch (InterruptedException e) {}
+        } catch (InterruptedException e) {
+            System.out.println("addPlayerToCheck. should not be reached");
+        }
         dealerThread.interrupt(); //if dealer thread is sleeping we wake him up
     }
 
@@ -303,7 +305,9 @@ public class Dealer implements Runnable {
                 else{
                     curPlayer.keyPressed(Player.PENALTY_MSG);;
                 }
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException e) {
+                System.out.println("checkPlayersSets. should not be reached");
+            }
         }
         System.out.println("<< checkPlayersSets. size=" + playersToCheck.size());
     }
