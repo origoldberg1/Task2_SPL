@@ -70,7 +70,7 @@ public class Player implements Runnable {
      * Queue for incoming actions
      * size <=3
      */
-    private BlockingQueue<Integer> incomingActions;
+    public BlockingQueue<Integer> incomingActions;
 
     /**
      * vector includes player current slots
@@ -93,7 +93,8 @@ public class Player implements Runnable {
      public static final int POINT_MSG = -2;
      public static final int NO_ACTION = Integer.MIN_VALUE;
 
-     boolean inCheckByDealer;
+    public volatile boolean inCheckByDealer;
+    public volatile boolean takeOutputs; 
 
     /**
      * The class constructor.
@@ -115,18 +116,29 @@ public class Player implements Runnable {
         this.lockForPlayer = new Object();
         this.slotsVector = new Vector<>();
         this.inCheckByDealer = false;
+        this.takeOutputs=true;
     }
 
     /**
      * The main player thread of each player starts here (main loop for the player thread).
      */
     @Override
-    public void run() {
+    public synchronized void run() {
         playerThread = Thread.currentThread();
         env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
         if (!human) createArtificialIntelligence();
 
-        while (!terminate) {
+        while (!terminate) { 
+            synchronized(this)
+            {
+            while(inCheckByDealer) //wait until dealer finished checking the set
+            {
+                try{
+                    this.wait();
+                } catch(InterruptedException e1){}
+                
+            }
+            }
             // while(dealer.dealerShouldReshuffle)
             // {
             //     try{
@@ -142,14 +154,16 @@ public class Player implements Runnable {
                 if (action == PENALTY_MSG) {
                     penalty();
                     incomingActions.clear();
-                    System.out.println("Player " + this.id + " inCheckByDealer=false");                         
-                    inCheckByDealer = false;
+                    // System.out.println("Player " + this.id + " inCheckByDealer=false");                         
+                    // inCheckByDealer = false;
+                    takeOutputs=true;
                 } 
                 else if (action == POINT_MSG) {
                     point();
                     incomingActions.clear();
-                    System.out.println("Player " + this.id + " inCheckByDealer=false");                         
-                    inCheckByDealer = false; 
+                    // System.out.println("Player " + this.id + " inCheckByDealer=false");                         
+                    // inCheckByDealer = false;
+                    takeOutputs=true; 
                 } 
                 else if (! inCheckByDealer) {
                     if (slotsVector.contains(action)){ //we need to remove token
@@ -171,7 +185,9 @@ public class Player implements Runnable {
                                 table.placeToken(id, action);
                                 addSlotToArr(action); //place the theSlot from the array
                                 if (slotsVector.size()==THREE){
-                                    inCheckByDealer = true;   
+                                    inCheckByDealer = true;
+                                    takeOutputs=false;
+                                    incomingActions.clear(); 
                                     System.out.println("Player " + this.id + " inCheckByDealer=true");                         
                                     dealer.addPlayerToCheck(this); // calling the dealer to check its slots
                                     // try {
@@ -222,12 +238,21 @@ public class Player implements Runnable {
      *
      * @param slot - the slot corresponding to the key pressed.
      */
-    public void keyPressed(int slot) { 
+    public void keyPressed(int slot) { //only outsider thread responisible for taking inputs access this method
         //TODO implement
         try { 
+            if(takeOutputs) //if the the delaer checks set, ignore from outputs
+            {
             incomingActions.put(slot);//when the queue is full the thread will wait
+            }
         }
         catch(InterruptedException ignored){}
+    }
+
+    public synchronized void waKeUpPlayer() //dealer finished check the set
+    {
+        inCheckByDealer=false;
+        this.notifyAll();      
     }
 
     /**

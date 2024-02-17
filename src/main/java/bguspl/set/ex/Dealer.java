@@ -160,7 +160,7 @@ public class Dealer implements Runnable {
         // TODO implement
         while (slotsToRemove.size()!=0)
         {
-            int slot=slotsToRemove.removeFirst();
+            int slot=slotsToRemove.remove(0);
             table.removeCard(slot);
             for(int i=0; i<players.length; i++)
             {
@@ -184,7 +184,7 @@ public class Dealer implements Runnable {
             int slot;
             int card;
             while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
-                card = deck.removeFirst();
+                card = deck.remove(0);
                 slot = findEmptySlot();
                 if(findEmptySlot() >= 0){  //the slot is a legal one
                     table.placeCard(card, slot);
@@ -200,7 +200,7 @@ public class Dealer implements Runnable {
         Collections.shuffle(oneToTwelve);
         for (Integer slot : oneToTwelve) {
             if(!deck.isEmpty()){
-                table.placeCard(deck.removeFirst(), slot);
+                table.placeCard(deck.remove(0), slot);
             }
         }
     }
@@ -297,12 +297,15 @@ public class Dealer implements Runnable {
                 if(testSet(curSet)){
                     removeCardsFromTable();
                     placeCardsOnTable();
-                    curPlayer.keyPressed(Player.POINT_MSG);
+                    curPlayer.incomingActions.put(Player.POINT_MSG);
                     updateTimerDisplay(true);
                 }
                 else{
-                    curPlayer.keyPressed(Player.PENALTY_MSG);;
+                    // curPlayer.incomingActions.clear();
+                    //self remark- the incomingActions queue is empty because we made it when updating takeOutput=false
+                    curPlayer.incomingActions.put(Player.PENALTY_MSG);
                 }
+                curPlayer.waKeUpPlayer();
             } catch (InterruptedException e) {}
         }
         System.out.println("<< checkPlayersSets. size=" + playersToCheck.size());

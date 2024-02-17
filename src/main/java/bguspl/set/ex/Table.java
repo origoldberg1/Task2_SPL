@@ -125,7 +125,7 @@ public class Table {
 
         // TODO implement
         for (int i = 0; i < tokensOnTable.elementAt(slot).size(); i++) {
-            removeToken(tokensOnTable.elementAt(slot).removeFirst(), slot);
+            removeToken(tokensOnTable.elementAt(slot).remove(0), slot);
         }
         //ask Yaniv
         cardToSlot[slotToCard[slot]] = null;
