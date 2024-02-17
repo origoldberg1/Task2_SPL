@@ -68,6 +68,8 @@ public class Dealer implements Runnable {
 
     final int THREE = 3;
 
+    final Object waitOnObject = new Object();
+
     public Dealer(Env env, Table table, Player[] players) {
         this.env = env;
         this.dealerShouldReshuffle=false;
@@ -125,13 +127,15 @@ public class Dealer implements Runnable {
     /**
      * Sleep for a fixed amount of time or until the thread is awakened for some purpose.
      */
-    private void sleepUntilWokenOrTimeout() {      
-        try{
-            Thread.sleep(ONE_SECOND);
-        } 
-        catch(InterruptedException error){
+    private void sleepUntilWokenOrTimeout() {   
+        synchronized(waitOnObject){
+            try {
+                waitOnObject.wait(ONE_SECOND);
+            } catch (InterruptedException e) {
+                System.out.println("sleepUntilWokenOrTimeout. should not be reached");
+            }
             checkPlayersSets();
-        }
+        }   
         dealerShouldReshuffle = System.currentTimeMillis() >= reshuffleTime;
         updateTimerDisplay(dealerShouldReshuffle);
     }
@@ -285,7 +289,11 @@ public class Dealer implements Runnable {
         } catch (InterruptedException e) {
             System.out.println("addPlayerToCheck. should not be reached");
         }
-        dealerThread.interrupt(); //if dealer thread is sleeping we wake him up
+        //dealerThread.interrupt(); //if dealer thread is sleeping we wake him up
+        synchronized(waitOnObject){
+            System.out.println("waitOnObject.notifyAll()");
+            waitOnObject.notifyAll();
+        }
     }
 
     public void checkPlayersSets(){
