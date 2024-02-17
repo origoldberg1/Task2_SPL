@@ -224,10 +224,15 @@ public class Player implements Runnable {
      */
     public void keyPressed(int slot) { 
         //TODO implement
+        if (inCheckByDealer && slot >= 0)
+            return;
+
         try { 
             incomingActions.put(slot);//when the queue is full the thread will wait
         }
-        catch(InterruptedException ignored){}
+        catch(InterruptedException ignored){
+            System.out.println("keyPressed. should not be reached");
+        }
     }
 
     /**
