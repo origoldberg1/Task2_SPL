@@ -128,12 +128,12 @@ public class Dealer implements Runnable {
     private void sleepUntilWokenOrTimeout() {      
         try{
             Thread.sleep(ONE_SECOND);
-            dealerShouldReshuffle = System.currentTimeMillis() >= reshuffleTime;
-            updateTimerDisplay(dealerShouldReshuffle);
         } 
         catch(InterruptedException error){
             checkPlayersSets();
         }
+        dealerShouldReshuffle = System.currentTimeMillis() >= reshuffleTime;
+        updateTimerDisplay(dealerShouldReshuffle);
     }
 
     /**
@@ -177,10 +177,10 @@ public class Dealer implements Runnable {
     private void placeCardsOnTable() {
         // TODO implement
         shuffleDeck();
-        if(table.countCards() == 0){
-            placeTwelveCardsOnTable();
-        }
-        else{
+        // if(table.countCards() == 0){
+        //     placeTwelveCardsOnTable();
+        // }
+        //else{
             int slot;
             int card;
             while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
@@ -190,7 +190,7 @@ public class Dealer implements Runnable {
                     table.placeCard(card, slot);
                 }
             }
-        }
+        //}
     }
     private void placeTwelveCardsOnTable(){
         Vector<Integer> oneToTwelve = new Vector<Integer>();
@@ -280,28 +280,32 @@ public class Dealer implements Runnable {
     }
 
     public void addPlayerToCheck(Player player){
-        if(!playersToCheck.contains(player)){
-            playersToCheck.add(player);
-        }
+        try {
+            playersToCheck.put(player);
+        } catch (InterruptedException e) {}
         dealerThread.interrupt(); //if dealer thread is sleeping we wake him up
     }
 
     public void checkPlayersSets(){
+        System.out.println(">> checkPlayersSets. size=" + playersToCheck.size());
         Player curPlayer;
         int[] curSet;
-        while(playersToCheck.size() > 0){
-            curPlayer = playersToCheck.remove();
-            curSet = slotsToCards(setVecToArr(curPlayer.getSlotsVector()));
-            if(testSet(curSet)){
-                removeCardsFromTable();
-                placeCardsOnTable();
-                curPlayer.point();
-                updateTimerDisplay(true);
-            }
-            else{
-                curPlayer.penalty();
-            }
+        while(!playersToCheck.isEmpty()){
+            try {
+                curPlayer = playersToCheck.take();
+                curSet = slotsToCards(setVecToArr(curPlayer.getSlotsVector()));
+                if(testSet(curSet)){
+                    removeCardsFromTable();
+                    placeCardsOnTable();
+                    curPlayer.keyPressed(Player.POINT_MSG);
+                    updateTimerDisplay(true);
+                }
+                else{
+                    curPlayer.keyPressed(Player.PENALTY_MSG);;
+                }
+            } catch (InterruptedException e) {}
         }
+        System.out.println("<< checkPlayersSets. size=" + playersToCheck.size());
     }
 
     /**

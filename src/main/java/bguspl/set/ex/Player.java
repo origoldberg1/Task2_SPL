@@ -89,6 +89,12 @@ public class Player implements Runnable {
 
      final int ONE_SECOND = 1000;
 
+     public static final int PENALTY_MSG = -1;
+     public static final int POINT_MSG = -2;
+     public static final int NO_ACTION = Integer.MIN_VALUE;
+
+     boolean inCheckByDealer;
+
     /**
      * The class constructor.
      *
@@ -108,8 +114,7 @@ public class Player implements Runnable {
         freezeUntil= System.currentTimeMillis()-1;
         this.lockForPlayer = new Object();
         this.slotsVector = new Vector<>();
-
-        
+        this.inCheckByDealer = false;
     }
 
     /**
@@ -131,39 +136,54 @@ public class Player implements Runnable {
             //     }
             //     catch(InterruptedException e1){};
             // }    
-            int theSlot = -1; // just for compilation, is gonna be changed when there is something in the queue
             try{
-                theSlot=incomingActions.take(); //wait until the queue isn't empty
-            }
-            catch (InterruptedException ignored){}
-            if (slotsVector.contains(theSlot)) //we need to remove token
-            {
-                while(dealer.dealerShouldReshuffle) //TODO check This way
-                {
-                    try{
-                        synchronized(lockForPlayer){
-                            lockForPlayer.wait();
-                        }
-                    } 
-                    catch(InterruptedException e1){};
-                }
-                table.removeToken(id, theSlot);
-                removeSlotFromArr(theSlot); //removes the theSlot from the array
-            }
-            else{ //we need to place token
-                if(slotsVector.size() != 3){
-                    if(table.slotToCard[theSlot] != null){
-                        table.placeToken(id, theSlot);
-                        addSlotToArr(theSlot); //place the theSlot from the array
-                        if (slotsVector.size()==THREE){
-                            dealer.addPlayerToCheck(this); // calling the dealer to check its slots
-                            try {
-                                dealer.getDealerThread().interrupt();
-                            } catch (Exception e) {}
+                Integer action=incomingActions.take(); //wait until the queue isn't empty
+                System.out.println("id :" + id+ " " + "action " + action + " inCheckByDealer " + inCheckByDealer);
+                if (action == PENALTY_MSG) {
+                    penalty();
+                    incomingActions.clear();
+                    System.out.println("Player " + this.id + " inCheckByDealer=false");                         
+                    inCheckByDealer = false;
+                } 
+                else if (action == POINT_MSG) {
+                    point();
+                    incomingActions.clear();
+                    System.out.println("Player " + this.id + " inCheckByDealer=false");                         
+                    inCheckByDealer = false; 
+                } 
+                else if (! inCheckByDealer) {
+                    if (slotsVector.contains(action)){ //we need to remove token
+                        // while(dealer.dealerShouldReshuffle) //TODO check This way
+                        // {
+                        //     try{
+                        //         synchronized(lockForPlayer){
+                        //             lockForPlayer.wait();
+                        //         }
+                        //     } 
+                        //     catch(InterruptedException e1){};
+                        // }
+                        table.removeToken(id, action);
+                        removeSlotFromArr(action); 
+                    }
+                    else{  //we need to place token
+                        if(slotsVector.size() != THREE){
+                            if(table.slotToCard[action] != null){
+                                table.placeToken(id, action);
+                                addSlotToArr(action); //place the theSlot from the array
+                                if (slotsVector.size()==THREE){
+                                    inCheckByDealer = true;   
+                                    System.out.println("Player " + this.id + " inCheckByDealer=true");                         
+                                    dealer.addPlayerToCheck(this); // calling the dealer to check its slots
+                                    // try {
+                                    //     dealer.getDealerThread().interrupt();
+                                    // } catch (Exception e) {}
+                                }
+                            }
                         }
                     }
-                }
-            }             
+                }             
+            }
+            catch (InterruptedException ignored){}
         }
         if (!human) try { aiThread.join(); } catch (InterruptedException ignored) {}
         env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");    
@@ -204,12 +224,8 @@ public class Player implements Runnable {
      */
     public void keyPressed(int slot) { 
         //TODO implement
-        try
-        {  
-            if(System.currentTimeMillis()>freezeUntil && !dealer.dealerShouldReshuffle) // if the player is blocked because of getting a penalty or a point
-            {
-                incomingActions.put(slot);//when the queue is full the thread will wait
-            } 
+        try { 
+            incomingActions.put(slot);//when the queue is full the thread will wait
         }
         catch(InterruptedException ignored){}
     }
@@ -258,14 +274,14 @@ public class Player implements Runnable {
         return score;
     }
 
-     public void removeSlotFromArr(int slot){ //remove from slot Vector 
+     public void removeSlotFromArr(int slot){ //remove from slot Vector
         if(slotsVector.contains(slot)){
             slotsVector.remove(slotsVector.indexOf(slot));  
         }
-     }
+    }
 
      public void addSlotToArr(int slot){ //remove from slot Vecto{
-            slotsVector.add(slot);  
+        slotsVector.add(slot);  
      }
 
      public void setPlayerThread(Thread playerThread) {
