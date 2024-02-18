@@ -157,7 +157,6 @@ public class Dealer implements Runnable {
             int slot=slotsToRemove.removeFirst();
             table.removeCard(slot);
             for(int i=0; i<players.length; i++){
-                players[i].removeSlotFromArr(slot); //update player its token has been removed from the card
                 table.removeToken(players[i].id, slot);
             }   
         }
@@ -214,7 +213,7 @@ public class Dealer implements Runnable {
     private void updateTimerDisplay(boolean reset) {
         // TODO implement
         if(reset){
-            reshuffleTime = SIXTEY_SECONDS + System.currentTimeMillis(); 
+            reshuffleTime = 5000 + System.currentTimeMillis(); 
             env.ui.setCountdown(env.config.turnTimeoutMillis, false);
         }
         else{

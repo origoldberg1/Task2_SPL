@@ -139,6 +139,7 @@ public class Player implements Runnable {
                 else if (action == POINT_MSG) {
                     point();
                     incomingActions.clear();
+                    slotsVector.clear();
                     inCheckByDealer = false;
                 } 
                 else if (!inCheckByDealer) {
@@ -177,9 +178,7 @@ public class Player implements Runnable {
             env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
                 // TODO implement player key press simulator
-                if(!inCheckByDealer){
-                    keyPressed((int) (Math.random() * NUM_OF_SLOTS));
-                }
+                keyPressed((int) (Math.random() * NUM_OF_SLOTS));
             }
             env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
         }, "computer-" + id);
