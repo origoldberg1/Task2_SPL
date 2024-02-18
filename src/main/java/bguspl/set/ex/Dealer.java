@@ -220,7 +220,7 @@ public class Dealer implements Runnable {
     private void updateTimerDisplay(boolean reset) {
         // TODO implement
         if(reset){
-            reshuffleTime = 60000 + System.currentTimeMillis(); 
+            reshuffleTime = 10000 + System.currentTimeMillis(); 
             env.ui.setCountdown(env.config.turnTimeoutMillis, false);
         }
         else{
@@ -245,6 +245,11 @@ public class Dealer implements Runnable {
         }
         Collections.shuffle(slotsToRemove);
         removeCardsFromTable();
+
+        for (Player player : players) {
+            player.slotsVectorClear();
+        }
+
         dealerShouldReshuffle=false;
     }
 
@@ -305,6 +310,7 @@ public class Dealer implements Runnable {
                 }
                 if(testSet(curSet)){
                     removeCardsFromTable();
+                    curPlayer.slotsVectorClear();
                     placeCardsOnTable();
                     curPlayer.keyPressed(Player.POINT_MSG);
                     updateTimerDisplay(true);

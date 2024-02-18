@@ -140,11 +140,10 @@ public class Player implements Runnable {
                 else if (action == POINT_MSG) {
                     point();
                     incomingActions.clear();
-                    slotsVector.clear();
                     inCheckByDealer = false;
                 } 
                 else if (!inCheckByDealer) {
-                    if (slotsVector.contains(action)){ //we need to remove token
+                    if (slotsVectorContains(action)){ //we need to remove token
                         table.removeToken(id, action);
                         removeSlotFromArr(action); 
                     }
@@ -254,14 +253,18 @@ public class Player implements Runnable {
         return score;
     }
 
-     public void removeSlotFromArr(int slot){ //remove from slot Vector
-        if(slotsVector.contains(slot)){
-            slotsVector.remove(slotsVector.indexOf(slot));  
+     public void removeSlotFromArr(int slot){ 
+        synchronized(slotsVector) {//remove from slot Vector
+            if(slotsVector.contains(slot)){
+                slotsVector.remove(slotsVector.indexOf(slot));  
+            }
         }
     }
 
-     public void addSlotToArr(int slot){ //remove from slot Vecto{
-        slotsVector.add(slot);  
+     public void addSlotToArr(int slot){ 
+        synchronized(slotsVector) {//remove from slot Vecto{
+            slotsVector.add(slot);
+        }  
      }
 
      public void setPlayerThread(Thread playerThread) {
@@ -274,6 +277,18 @@ public class Player implements Runnable {
 
     public Vector<Integer> getSlotsVector(){
         return slotsVector;
+    }
+
+    public void slotsVectorClear() {
+        synchronized(slotsVector) {
+            slotsVector.clear();
+        }
+    }
+
+    private boolean slotsVectorContains(int action) {
+        synchronized(slotsVector) {
+            return slotsVector.contains(action);
+        } 
     }
     
     public void StartPlayerThread(){
