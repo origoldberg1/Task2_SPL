@@ -85,7 +85,7 @@ public class Player implements Runnable {
 
      private Object lockForPlayer;
 
-     private final int THREE = 3;
+     final int THREE = 3;
 
      final int ONE_SECOND = 1000;
 
@@ -93,7 +93,7 @@ public class Player implements Runnable {
      public static final int POINT_MSG = -2;
      public static final int NO_ACTION = Integer.MIN_VALUE;
 
-     boolean inCheckByDealer;
+     private boolean inCheckByDealer;
 
     /**
      * The class constructor.
@@ -127,41 +127,20 @@ public class Player implements Runnable {
         if (!human) createArtificialIntelligence();
 
         while (!terminate) {
-            // while(dealer.dealerShouldReshuffle)
-            // {
-            //     try{
-            //         synchronized(lockForPlayer){
-            //             lockForPlayer.wait();
-            //         }
-            //     }
-            //     catch(InterruptedException e1){};
-            // }    
             try{
                 Integer action=incomingActions.take(); //wait until the queue isn't empty
-                System.out.println("id :" + id+ " " + "action " + action + " inCheckByDealer " + inCheckByDealer);
                 if (action == PENALTY_MSG) {
                     penalty();
                     incomingActions.clear();
-                    System.out.println("Player " + this.id + " inCheckByDealer=false");                         
                     inCheckByDealer = false;
                 } 
                 else if (action == POINT_MSG) {
                     point();
                     incomingActions.clear();
-                    System.out.println("Player " + this.id + " inCheckByDealer=false");                         
-                    inCheckByDealer = false; 
+                    inCheckByDealer = false;
                 } 
                 else if (!inCheckByDealer) {
                     if (slotsVector.contains(action)){ //we need to remove token
-                        // while(dealer.dealerShouldReshuffle) //TODO check This way
-                        // {
-                        //     try{
-                        //         synchronized(lockForPlayer){
-                        //             lockForPlayer.wait();
-                        //         }
-                        //     } 
-                        //     catch(InterruptedException e1){};
-                        // }
                         table.removeToken(id, action);
                         removeSlotFromArr(action); 
                     }
@@ -171,12 +150,9 @@ public class Player implements Runnable {
                                 table.placeToken(id, action);
                                 addSlotToArr(action); //place the theSlot from the array
                                 if (slotsVector.size()==THREE){
-                                    inCheckByDealer = true;   
-                                    System.out.println("Player " + this.id + " inCheckByDealer=true");                         
+                                    inCheckByDealer = true;
+                                    incomingActions.clear();   
                                     dealer.addPlayerToCheck(this); // calling the dealer to check its slots
-                                    // try {
-                                    //     dealer.getDealerThread().interrupt();
-                                    // } catch (Exception e) {}
                                 }
                             }
                         }
@@ -224,14 +200,13 @@ public class Player implements Runnable {
      */
     public void keyPressed(int slot) { 
         //TODO implement
-        if (inCheckByDealer && slot >= 0)
+        if (inCheckByDealer && slot >= 0){
             return;
-
+        }
         try { 
             incomingActions.put(slot);//when the queue is full the thread will wait
         }
         catch(InterruptedException ignored){
-            System.out.println("keyPressed. should not be reached");
         }
     }
 
@@ -297,8 +272,7 @@ public class Player implements Runnable {
         return slotsVector;
     }
     
-    public void StartPlayerThread()
-    {
+    public void StartPlayerThread(){
         playerThread=new Thread(this);
         playerThread.start();
     }
@@ -306,9 +280,6 @@ public class Player implements Runnable {
     public Object getLockForPlayer(){
         return lockForPlayer;
     }
-
-    public Thread getPlayerThread(){
-        return playerThread;
-    }
+    
 }
 

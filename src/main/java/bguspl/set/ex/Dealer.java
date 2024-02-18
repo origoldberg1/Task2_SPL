@@ -45,7 +45,6 @@ public class Dealer implements Runnable {
      */
     private long reshuffleTime = Long.MAX_VALUE;
 
-
     /**
      * slots from which cards should be removed
      */
@@ -56,15 +55,15 @@ public class Dealer implements Runnable {
      */
     private BlockingQueue<Player> playersToCheck;
 
-    public volatile boolean dealerShouldReshuffle;
-
-    private Thread dealerThread;
+    public volatile boolean dealerShouldReshuffle; 
 
     final int NUM_OF_SLOTS = 12;
 
     final int SIXTEY_SECONDS = 60000;
 
     final int ONE_SECOND = 1000;
+
+    final int ONE_HUNDRED_MILI_SEC = 100;
 
     final int THREE = 3;
 
@@ -80,7 +79,6 @@ public class Dealer implements Runnable {
         this.slotsToRemove = new Vector<>();
         this.playersToCheck = new ArrayBlockingQueue<>(players.length);
         this.dealerShouldReshuffle =true;
-        this.dealerThread = null;
     }
 
     /**
@@ -88,12 +86,8 @@ public class Dealer implements Runnable {
      */
     @Override
     public void run() {
-        dealerThread = Thread.currentThread();
         env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
         for (Player player : players) {
-            //Thread playerThread = new Thread(player);
-            //player.setPlayerThread(playerThread);
-            //playerThread.start();
             player.StartPlayerThread();
         }
         while (!shouldFinish()) {
@@ -111,17 +105,9 @@ public class Dealer implements Runnable {
      * The inner loop of the dealer thread that runs as long as the countdown did not time out.
      */
     private void timerLoop() {
-        while(!dealerShouldReshuffle)
-        {
+        while(!dealerShouldReshuffle){
             sleepUntilWokenOrTimeout();
         }
-        // the next lines were given
-        // while (!terminate && System.currentTimeMillis() < reshuffleTime) {
-        //     sleepUntilWokenOrTimeout();
-        //     updateTimerDisplay(false);
-        //     removeCardsFromTable();
-        //     placeCardsOnTable();
-        // }
     }
 
     /**
@@ -130,12 +116,10 @@ public class Dealer implements Runnable {
     private void sleepUntilWokenOrTimeout() {   
         synchronized(waitOnObject){
             try {
-                waitOnObject.wait(ONE_SECOND);
-            } catch (InterruptedException e) {
-                System.out.println("sleepUntilWokenOrTimeout. should not be reached");
-            }
+                waitOnObject.wait(ONE_HUNDRED_MILI_SEC);
+            } catch (InterruptedException e) {}
             checkPlayersSets();
-        }   
+        }
         dealerShouldReshuffle = System.currentTimeMillis() >= reshuffleTime;
         updateTimerDisplay(dealerShouldReshuffle);
     }
@@ -146,6 +130,12 @@ public class Dealer implements Runnable {
     public void terminate() {
         // TODO implement
         env.ui.dispose(); //closes window
+        for (Player player : players) {
+            player.terminate();
+        }
+        try {
+            Thread.currentThread().join();
+        } catch (InterruptedException e) {}
     }
 
     /**
@@ -162,12 +152,10 @@ public class Dealer implements Runnable {
      */
     private void removeCardsFromTable() {
         // TODO implement
-        while (slotsToRemove.size()!=0)
-        {
+        while (slotsToRemove.size()!=0){
             int slot=slotsToRemove.removeFirst();
             table.removeCard(slot);
-            for(int i=0; i<players.length; i++)
-            {
+            for(int i=0; i<players.length; i++){
                 players[i].removeSlotFromArr(slot); //update player its token has been removed from the card
                 table.removeToken(players[i].id, slot);
             }   
@@ -181,9 +169,9 @@ public class Dealer implements Runnable {
     private void placeCardsOnTable() {
         // TODO implement
         shuffleDeck();
-        // if(table.countCards() == 0){
-        //     placeTwelveCardsOnTable();
-        // }
+        if(table.countCards() == 0){
+            placeTwelveCardsOnTable();
+        }
         //else{
             int slot;
             int card;
@@ -248,7 +236,6 @@ public class Dealer implements Runnable {
         Collections.shuffle(slotsToRemove);
         removeCardsFromTable();
         dealerShouldReshuffle=false;
-        //notifyPlayers();
     }
 
     /**
@@ -256,15 +243,16 @@ public class Dealer implements Runnable {
      */
     private void announceWinners() {
         // TODO implement
+        if(players.length == 0) {return;} 
         List<Player> winners = new LinkedList<>();
         winners.add(players[0]);
-        for (Player cuPlayer : players) {
-            if(winners.getFirst().score() == cuPlayer.score()){
-                winners.add(cuPlayer);
+        for (int i = 1; i < players.length; i++) {            
+            if(winners.getFirst().score() == players[i].score()){
+                winners.add(players[i]);
             }
-            else if(winners.getFirst().score() > cuPlayer.score()){
+            else if(winners.getFirst().score() > players[i].score()){
                 winners.clear();
-                winners.add(cuPlayer);
+                winners.add(players[i]);
             }
         }
         env.ui.announceWinner(playerListToIdArr(winners));
@@ -287,17 +275,17 @@ public class Dealer implements Runnable {
         try {
             playersToCheck.put(player);
         } catch (InterruptedException e) {
-            System.out.println("addPlayerToCheck. should not be reached");
+            //System.out.println("addPlayerToCheck. should not be reached");
         }
         //dealerThread.interrupt(); //if dealer thread is sleeping we wake him up
         synchronized(waitOnObject){
-            System.out.println("waitOnObject.notifyAll()");
+            //System.out.println("waitOnObject.notifyAll()");
             waitOnObject.notifyAll();
         }
     }
 
     public void checkPlayersSets(){
-        System.out.println(">> checkPlayersSets. size=" + playersToCheck.size());
+        //System.out.println(">> checkPlayersSets. size=" + playersToCheck.size());
         Player curPlayer;
         int[] curSet;
         while(!playersToCheck.isEmpty()){
@@ -314,10 +302,9 @@ public class Dealer implements Runnable {
                     curPlayer.keyPressed(Player.PENALTY_MSG);;
                 }
             } catch (InterruptedException e) {
-                System.out.println("checkPlayersSets. should not be reached");
+                //System.out.println("checkPlayersSets. should not be reached");
             }
         }
-        System.out.println("<< checkPlayersSets. size=" + playersToCheck.size());
     }
 
     /**
@@ -360,11 +347,7 @@ public class Dealer implements Runnable {
     }
 
     public void shuffleDeck(){
-        //Collections.shuffle(deck);
-    }
-
-    public Thread getDealerThread(){
-        return dealerThread;
+        Collections.shuffle(deck);
     }
 
     public void notifyPlayers(){

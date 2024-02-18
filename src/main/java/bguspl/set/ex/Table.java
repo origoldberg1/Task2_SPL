@@ -127,9 +127,11 @@ public class Table {
         for (int i = 0; i < tokensOnTable.elementAt(slot).size(); i++) {
             removeToken(tokensOnTable.elementAt(slot).removeFirst(), slot);
         }
-        cardToSlot[slotToCard[slot]] = null;
-        slotToCard[slot] = null;
-        env.ui.removeCard(slot);
+        if(slotToCard[slot] != null){
+            cardToSlot[slotToCard[slot]] = null;
+            slotToCard[slot] = null;
+            env.ui.removeCard(slot);
+        }
     }
 
     /**
