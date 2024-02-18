@@ -93,6 +93,8 @@ public class Player implements Runnable {
      
      public static final int POINT_MSG = -2;
 
+     public static final int CONTINUEPLAY_MSG = -3;
+
      final int NUM_OF_SLOTS = 12;
 
      private boolean inCheckByDealer;
@@ -141,7 +143,9 @@ public class Player implements Runnable {
                     point();
                     incomingActions.clear();
                     inCheckByDealer = false;
-                } 
+                } else if (action == CONTINUEPLAY_MSG) {
+                    inCheckByDealer = false;
+                }
                 else if (!inCheckByDealer) {
                     if (slotsVectorContains(action)){ //we need to remove token
                         table.removeToken(id, action);

@@ -165,6 +165,7 @@ public class Dealer implements Runnable {
             table.removeCard(slot);
             for(int i=0; i<players.length; i++){
                 table.removeToken(players[i].id, slot);
+                players[i].removeSlotFromArr(slot); //update player its token has been removed from the card
             }   
         }
 
@@ -220,7 +221,7 @@ public class Dealer implements Runnable {
     private void updateTimerDisplay(boolean reset) {
         // TODO implement
         if(reset){
-            reshuffleTime = 10000 + System.currentTimeMillis(); 
+            reshuffleTime = SIXTEY_SECONDS + System.currentTimeMillis(); 
             env.ui.setCountdown(env.config.turnTimeoutMillis, false);
         }
         else{
@@ -306,11 +307,16 @@ public class Dealer implements Runnable {
             try {
                 curPlayer = playersToCheck.take();
                 synchronized(curPlayer.getSlotsVector()) {
-                    curSet = slotsToCards(setVecToArr(curPlayer.getSlotsVector()));
+                    if (curPlayer.getSlotsVector().size() == THREE) {
+                        curSet = slotsToCards(setVecToArr(curPlayer.getSlotsVector()));
+                    } else {
+                        curSet = null;
+                    }
                 }
-                if(testSet(curSet)){
+                if (curSet == null) {
+                    curPlayer.keyPressed(Player.CONTINUEPLAY_MSG);
+                } else if(testSet(curSet)){
                     removeCardsFromTable();
-                    curPlayer.slotsVectorClear();
                     placeCardsOnTable();
                     curPlayer.keyPressed(Player.POINT_MSG);
                     updateTimerDisplay(true);
