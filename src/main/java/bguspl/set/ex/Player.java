@@ -90,8 +90,10 @@ public class Player implements Runnable {
      final int ONE_SECOND = 1000;
 
      public static final int PENALTY_MSG = -1;
+     
      public static final int POINT_MSG = -2;
-     public static final int NO_ACTION = Integer.MIN_VALUE;
+
+     final int NUM_OF_SLOTS = 12;
 
      private boolean inCheckByDealer;
 
@@ -174,12 +176,10 @@ public class Player implements Runnable {
         aiThread = new Thread(() -> {
             env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
-                int randomKey = (int)(Math.random()*12);
-
-                try { //we edit it
-                    if(System.currentTimeMillis()>freezeUntil)
-                    incomingActions.put(randomKey);
-                } catch (InterruptedException ignored) {}
+                // TODO implement player key press simulator
+                if(!inCheckByDealer){
+                    keyPressed((int) (Math.random() * NUM_OF_SLOTS));
+                }
             }
             env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
         }, "computer-" + id);

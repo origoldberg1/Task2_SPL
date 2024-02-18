@@ -95,6 +95,7 @@ public class Dealer implements Runnable {
             dealerShouldReshuffle=false;
             updateTimerDisplay(true);
             timerLoop(); //self mark- should do things until we need to rersheufle 
+            checkPlayersSets();
             removeAllCardsFromTable();
         }
         announceWinners();
@@ -229,6 +230,9 @@ public class Dealer implements Runnable {
     private void removeAllCardsFromTable() {
         // TODO implement
         for (int i = 0; i < NUM_OF_SLOTS; i++) {
+            // if(table.slotToCard[i] != null){
+            //     deck.add(table.slotToCard[i]);
+            // }
             if(!slotsToRemove.contains(i)){
                 slotsToRemove.add(i);
             }
@@ -250,7 +254,7 @@ public class Dealer implements Runnable {
             if(winners.getFirst().score() == players[i].score()){
                 winners.add(players[i]);
             }
-            else if(winners.getFirst().score() > players[i].score()){
+            else if(winners.getFirst().score() < players[i].score()){
                 winners.clear();
                 winners.add(players[i]);
             }
@@ -285,7 +289,6 @@ public class Dealer implements Runnable {
     }
 
     public void checkPlayersSets(){
-        //System.out.println(">> checkPlayersSets. size=" + playersToCheck.size());
         Player curPlayer;
         int[] curSet;
         while(!playersToCheck.isEmpty()){
