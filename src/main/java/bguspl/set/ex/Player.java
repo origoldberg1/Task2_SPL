@@ -131,6 +131,7 @@ public class Player implements Runnable {
         while (!terminate) {
             try{
                 Integer action=incomingActions.take(); //wait until the queue isn't empty
+                if(human){System.out.println("player: " + id + ", action:" + action);}
                 if (action == PENALTY_MSG) {
                     penalty();
                     incomingActions.clear();
@@ -204,9 +205,9 @@ public class Player implements Runnable {
         }
         try { 
             incomingActions.put(slot);//when the queue is full the thread will wait
+            if (human){System.out.println("player: " + id + ", key:" + slot);}
         }
-        catch(InterruptedException ignored){
-        }
+        catch(InterruptedException ignored){}
     }
 
     /**
@@ -220,7 +221,7 @@ public class Player implements Runnable {
          freezeUntil=System.currentTimeMillis()+env.config.pointFreezeMillis; //the player is blocked for input, see keyPresses method
          env.ui.setFreeze(id, env.config.pointFreezeMillis);
          int cnt = 0;
-         while (System.currentTimeMillis() <= freezeUntil) {
+         while (System.currentTimeMillis() <= freezeUntil && !terminate) {
              cnt ++;
              try {
                  Thread.sleep(ONE_SECOND);
@@ -239,7 +240,7 @@ public class Player implements Runnable {
         freezeUntil=System.currentTimeMillis()+env.config.penaltyFreezeMillis; //the player is blocked for input, see keyPresses method
         env.ui.setFreeze(id, env.config.penaltyFreezeMillis);
         int cnt = 0;
-        while (System.currentTimeMillis() <= freezeUntil) {
+        while (System.currentTimeMillis() <= freezeUntil && !terminate) {
             cnt ++;
             try {
                 Thread.sleep(ONE_SECOND);
@@ -265,6 +266,10 @@ public class Player implements Runnable {
 
      public void setPlayerThread(Thread playerThread) {
         this.playerThread = playerThread;
+    }
+
+    public Thread getPlayerThread() {
+        return this.playerThread;
     }
 
     public Vector<Integer> getSlotsVector(){

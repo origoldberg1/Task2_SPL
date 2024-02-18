@@ -131,9 +131,16 @@ public class Dealer implements Runnable {
     public void terminate() {
         // TODO implement
         env.ui.dispose(); //closes window
+        terminate = true;
         for (Player player : players) {
             player.terminate();
         }
+        for (Player player : players) {
+            try {
+                player.getPlayerThread().join();
+            } catch (InterruptedException e) {};
+        }
+
         try {
             Thread.currentThread().join();
         } catch (InterruptedException e) {}
@@ -213,7 +220,7 @@ public class Dealer implements Runnable {
     private void updateTimerDisplay(boolean reset) {
         // TODO implement
         if(reset){
-            reshuffleTime = 5000 + System.currentTimeMillis(); 
+            reshuffleTime = 60000 + System.currentTimeMillis(); 
             env.ui.setCountdown(env.config.turnTimeoutMillis, false);
         }
         else{
@@ -293,7 +300,9 @@ public class Dealer implements Runnable {
         while(!playersToCheck.isEmpty()){
             try {
                 curPlayer = playersToCheck.take();
-                curSet = slotsToCards(setVecToArr(curPlayer.getSlotsVector()));
+                synchronized(curPlayer.getSlotsVector()) {
+                    curSet = slotsToCards(setVecToArr(curPlayer.getSlotsVector()));
+                }
                 if(testSet(curSet)){
                     removeCardsFromTable();
                     placeCardsOnTable();
@@ -303,9 +312,7 @@ public class Dealer implements Runnable {
                 else{
                     curPlayer.keyPressed(Player.PENALTY_MSG);;
                 }
-            } catch (InterruptedException e) {
-                //System.out.println("checkPlayersSets. should not be reached");
-            }
+            } catch (InterruptedException e) {}
         }
     }
 
