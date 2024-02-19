@@ -64,17 +64,17 @@ public class Dealer implements Runnable {
 
     private Thread dealeThread;
 
-    public volatile boolean dealerShouldReshuffle; 
+    private boolean dealerShouldReshuffle; 
 
     final int NUM_OF_SLOTS = 12;
 
-    final int SIXTEY_SECONDS = 60000;
-
-    final int ONE_SECOND = 1000;
-
-    final int ONE_HUNDRED_MILI_SEC = 100;
-
     final int THREE = 3;
+    
+    final int ONE_HUNDRED_MILI_SEC = 100;
+    
+    final int ONE_SECOND = 1000;
+    
+    final int SIXTEY_SECONDS = 60000;
 
     final Object waitOnObject = new Object();
 
@@ -147,7 +147,7 @@ public class Dealer implements Runnable {
     /**
      * Called when the game should be terminated.
      */
-    public void terminate() {
+    public synchronized void terminate() {
         // TODO implement
         try {
             env.ui.dispose();
