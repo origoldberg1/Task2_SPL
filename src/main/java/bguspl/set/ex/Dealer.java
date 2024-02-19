@@ -184,7 +184,7 @@ public class Dealer implements Runnable {
             table.removeCard(slot);
             for(int i=0; i<players.length; i++){
                // table.removeToken(players[i].id, slot);
-                players[i].removeSlotFromArr(slot); //update player its token has been removed from the card
+                players[i].getChosenSlots().remove(slot); //update player its token has been removed from the card
             }   
         }
 
@@ -264,7 +264,7 @@ public class Dealer implements Runnable {
         removeCardsFromTable();
 
         for (Player player : players) {
-            player.slotsVectorClear();
+            player.getChosenSlots().clear();
         }
 
         dealerShouldReshuffle=false;
@@ -318,13 +318,8 @@ public class Dealer implements Runnable {
         while(!playersToCheck.isEmpty()){
             try {
                 curPlayer = playersToCheck.take();
-                synchronized(curPlayer.getSlotsVector()) {
-                    if (curPlayer.getSlotsVector().size() == THREE) {
-                        curSet = slotsToCards(setVecToArr(curPlayer.getSlotsVector()));
-                    } else {
-                        curSet = null;
-                    }
-                }
+                curSet = curPlayer.getChosenSlots().convertToSet();
+
                 if (curSet == null) {
                     curPlayer.keyPressed(Player.CONTINUEPLAY_MSG);
                 } else if(testSet(curSet)){
@@ -335,43 +330,22 @@ public class Dealer implements Runnable {
                     for (Integer card : curSet) {
                         cardsInDeckAndTable.remove(card);
                     }
-                }
-                else{
+                } else{
                     curPlayer.keyPressed(Player.PENALTY_MSG);;
                 }
             } catch (InterruptedException e) {}
         }
     }
 
-    /**
-     * 
-     * @param vec - a vector of Integers representing slots, size(vec) = 3
-     * @return an arr in size 3 of the slots
-     */
-    public int[] setVecToArr(Vector<Integer> vec){
-        int[] res = new int[THREE];
-        for (int i = 0; i < res.length; i++) {
-            res[i] = vec.get(i);
-        }
-        return res;
-    }
 
     public boolean testSet(int[]cards){
-       if(env.util.testSet(cards)){
-        for (int i = 0; i < cards.length; i++) {
-            slotsToRemove.add(table.cardToSlot[cards[i]]);
+        if(env.util.testSet(cards)){
+            for (int i = 0; i < cards.length; i++) {
+                slotsToRemove.add(table.cardToSlot[cards[i]]);
+            }
+            return true;
         }
-        return true;
-       }
-       return false;   
-    }
-
-    public int[] slotsToCards(int[]slots){
-        int[]cards = new int[slots.length];
-        for (int i = 0; i < cards.length; i++) {
-            cards[i] = table.slotToCard[slots[i]];
-        }
-        return cards;
+       return false;
     }
 
     public int[] cardsToSlots(int[]cards){

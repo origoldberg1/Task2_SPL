@@ -73,10 +73,9 @@ public class Player implements Runnable {
     private BlockingQueue<Integer> incomingActions;
 
     /**
-     * vector includes player current slots
+     * an object containg a vector of the player's current chosen slots
      */
-
-    private Vector<Integer> slotsVector;
+     private ChosenSlots chosenSlots;
    
      /*
       * the dealer of the game
@@ -117,7 +116,7 @@ public class Player implements Runnable {
         this.incomingActions = new ArrayBlockingQueue<>(THREE);
         freezeUntil= System.currentTimeMillis()-1;
         this.lockForPlayer = new Object();
-        this.slotsVector = new Vector<>();
+        this.chosenSlots = new ChosenSlots(table);
         this.inCheckByDealer = false;
     }
 
@@ -133,7 +132,6 @@ public class Player implements Runnable {
         while (!terminate) {
             try{
                 Integer action=incomingActions.take(); //wait until the queue isn't empty
-                if(human){System.out.println("player: " + id + ", action:" + action);}
                 if (action == PENALTY_MSG) {
                     penalty();
                     incomingActions.clear();
@@ -147,16 +145,16 @@ public class Player implements Runnable {
                     inCheckByDealer = false;
                 }
                 else if (!inCheckByDealer) {
-                    if (slotsVectorContains(action)){ //we need to remove token
+                    if (chosenSlots.contains(action)){ //we need to remove token
                         table.removeToken(id, action);
-                        removeSlotFromArr(action); 
+                        chosenSlots.remove(action); 
                     }
                     else{  //we need to place token
-                        if(slotsVector.size() != THREE){
+                        if(chosenSlots.size() != THREE){
                             if(table.slotToCard[action] != null){
                                 table.placeToken(id, action);
-                                addSlotToArr(action); //place the theSlot from the array
-                                if (slotsVector.size()==THREE){
+                                chosenSlots.add(action); //place the theSlot from the array
+                                if (chosenSlots.size() == THREE){
                                     inCheckByDealer = true;
                                     incomingActions.clear();   
                                     dealer.addPlayerToCheck(this); // calling the dealer to check its slots
@@ -203,14 +201,10 @@ public class Player implements Runnable {
      */
     public void keyPressed(int slot) { 
         //TODO implement
-        if (inCheckByDealer && slot >= 0){
-            return;
-        }
+        if (inCheckByDealer && slot >= 0) {return;}
         try { 
             incomingActions.put(slot);//when the queue is full the thread will wait
-            if (human){System.out.println("player: " + id + ", key:" + slot);}
-        }
-        catch(InterruptedException ignored){}
+        } catch(InterruptedException ignored){}
     }
 
     /**
@@ -256,42 +250,12 @@ public class Player implements Runnable {
         return score;
     }
 
-     public void removeSlotFromArr(int slot){ 
-        synchronized(slotsVector) {//remove from slot Vector
-            if(slotsVector.contains(slot)){
-                slotsVector.remove(slotsVector.indexOf(slot));  
-            }
-        }
-    }
-
-     public void addSlotToArr(int slot){ 
-        synchronized(slotsVector) {//remove from slot Vecto{
-            slotsVector.add(slot);
-        }  
-     }
-
      public void setPlayerThread(Thread playerThread) {
         this.playerThread = playerThread;
     }
 
     public Thread getPlayerThread() {
         return this.playerThread;
-    }
-
-    public Vector<Integer> getSlotsVector(){ //accessable only by Dealer
-        return slotsVector;
-    }
-
-    public void slotsVectorClear() {
-        synchronized(slotsVector) {
-            slotsVector.clear();
-        }
-    }
-
-    private boolean slotsVectorContains(int action) {
-        synchronized(slotsVector) {
-            return slotsVector.contains(action);
-        } 
     }
     
     public void StartPlayerThread(){
@@ -301,6 +265,10 @@ public class Player implements Runnable {
 
     public Object getLockForPlayer(){
         return lockForPlayer;
+    }
+
+    public ChosenSlots getChosenSlots(){
+        return chosenSlots;
     }
     
 }
