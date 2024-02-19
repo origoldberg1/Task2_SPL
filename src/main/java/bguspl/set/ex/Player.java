@@ -279,7 +279,7 @@ public class Player implements Runnable {
         return this.playerThread;
     }
 
-    public Vector<Integer> getSlotsVector(){
+    public Vector<Integer> getSlotsVector(){ //accessable only by Dealer
         return slotsVector;
     }
 

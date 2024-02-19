@@ -124,9 +124,9 @@ public class Table {
         } catch (InterruptedException ignored) {}
 
         // TODO implement
-        for (int i = 0; i < tokensOnTable.elementAt(slot).size(); i++) {
+        while (!tokensOnTable.elementAt(slot).isEmpty()) {
             removeToken(tokensOnTable.elementAt(slot).removeFirst(), slot);
-        }
+        } 
         if(slotToCard[slot] != null){
             cardToSlot[slotToCard[slot]] = null;
             slotToCard[slot] = null;

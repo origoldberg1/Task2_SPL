@@ -132,18 +132,17 @@ public class Dealer implements Runnable {
         // TODO implement
         env.ui.dispose(); //closes window
         terminate = true;
-        for (Player player : players) {
-            player.terminate();
+        for (int i = players.length-1; i >= 0; i--) { 
+            players[i].terminate();
         }
-        for (Player player : players) {
+        for (int i = players.length-1; i >= 0; i--) { //join the players' threads in reverse order
             try {
-                player.getPlayerThread().join();
+                players[i].getPlayerThread().join();
             } catch (InterruptedException e) {};
         }
-
-        try {
-            Thread.currentThread().join();
-        } catch (InterruptedException e) {}
+        // try {
+        //     Thread.currentThread().join();
+        // } catch (InterruptedException e) {}
     }
 
     /**
@@ -164,7 +163,7 @@ public class Dealer implements Runnable {
             int slot=slotsToRemove.removeFirst();
             table.removeCard(slot);
             for(int i=0; i<players.length; i++){
-                table.removeToken(players[i].id, slot);
+               // table.removeToken(players[i].id, slot);
                 players[i].removeSlotFromArr(slot); //update player its token has been removed from the card
             }   
         }
@@ -178,21 +177,18 @@ public class Dealer implements Runnable {
         // TODO implement
         shuffleDeck();
         if(table.countCards() == 0){
-            placeTwelveCardsOnTable();
+            placeTwelveCards();
         }
-        //else{
-            int slot;
-            int card;
-            while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
-                card = deck.removeFirst();
-                slot = findEmptySlot();
-                if(findEmptySlot() >= 0){  //the slot is a legal one
-                    table.placeCard(card, slot);
-                }
+        int slot,card;
+        while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
+            card = deck.removeFirst();
+            slot = findEmptySlot();
+            if(findEmptySlot() >= 0){  //the slot is a legal one
+                table.placeCard(card, slot);
             }
-        //}
+        }
     }
-    private void placeTwelveCardsOnTable(){
+    private void placeTwelveCards(){
         Vector<Integer> oneToTwelve = new Vector<Integer>();
         for (int i = 0; i < NUM_OF_SLOTS; i++) {
             oneToTwelve.add(i);
@@ -237,9 +233,9 @@ public class Dealer implements Runnable {
     private void removeAllCardsFromTable() {
         // TODO implement
         for (int i = 0; i < NUM_OF_SLOTS; i++) {
-            // if(table.slotToCard[i] != null){
-            //     deck.add(table.slotToCard[i]);
-            // }
+            if(table.slotToCard[i] != null){
+                deck.add(table.slotToCard[i]);
+            }
             if(!slotsToRemove.contains(i)){
                 slotsToRemove.add(i);
             }
