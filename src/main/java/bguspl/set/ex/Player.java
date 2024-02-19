@@ -193,7 +193,7 @@ public class Player implements Runnable {
      * Called when the game should be terminated.
      */
     public void terminate() {
-        terminate=true;
+        terminate = true;
     }
 
     /**
@@ -248,9 +248,8 @@ public class Player implements Runnable {
             try {
                 Thread.sleep(ONE_SECOND);
             } catch (Exception e) {}
-            env.ui.setFreeze(id, env.config.penaltyFreezeMillis - ONE_SECOND*cnt);            
+            env.ui.setFreeze(id, env.config.penaltyFreezeMillis - ONE_SECOND * cnt);            
         }
-
     }
 
     public int score() {

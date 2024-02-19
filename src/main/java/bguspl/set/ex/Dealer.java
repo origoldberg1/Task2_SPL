@@ -4,6 +4,7 @@ import bguspl.set.Env;
 
 import static java.lang.String.format;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,6 +36,12 @@ public class Dealer implements Runnable {
      */
     private final List<Integer> deck;
 
+
+     /**
+     * The list of card ids that are left both in the dealer's deck and on the table.
+     */   
+    private final List<Integer> cardsInDeckAndTable;
+
     /**
      * True iff game should be terminated.
      */
@@ -55,6 +62,8 @@ public class Dealer implements Runnable {
      */
     private BlockingQueue<Player> playersToCheck;
 
+    private Thread dealeThread;
+
     public volatile boolean dealerShouldReshuffle; 
 
     final int NUM_OF_SLOTS = 12;
@@ -69,6 +78,7 @@ public class Dealer implements Runnable {
 
     final Object waitOnObject = new Object();
 
+
     public Dealer(Env env, Table table, Player[] players) {
         this.env = env;
         this.dealerShouldReshuffle=false;
@@ -79,6 +89,8 @@ public class Dealer implements Runnable {
         this.slotsToRemove = new Vector<>();
         this.playersToCheck = new ArrayBlockingQueue<>(players.length);
         this.dealerShouldReshuffle =true;
+        this.cardsInDeckAndTable = new ArrayList<>();
+        cardsInDeckAndTable.addAll(deck);
     }
 
     /**
@@ -86,6 +98,7 @@ public class Dealer implements Runnable {
      */
     @Override
     public void run() {
+        this.dealeThread = Thread.currentThread();
         env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
         for (Player player : players) {
             player.StartPlayerThread();
@@ -98,18 +111,24 @@ public class Dealer implements Runnable {
             checkPlayersSets();
             removeAllCardsFromTable();
         }
-        announceWinners();
         env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
-    }
-
-    /**
-     * The inner loop of the dealer thread that runs as long as the countdown did not time out.
-     */
-    private void timerLoop() {
-        while(!dealerShouldReshuffle){
-            sleepUntilWokenOrTimeout();
+        if(!terminate){
+            announceWinners();
+            try {
+                Thread.sleep(env.config.endGamePauseMillies);
+            } catch (Exception e) {}
+            terminate();
         }
     }
+    
+        /**
+         * The inner loop of the dealer thread that runs as long as the countdown did not time out.
+         */
+        private void timerLoop() {
+            while(!dealerShouldReshuffle && !shouldFinish()){
+                sleepUntilWokenOrTimeout();
+            }
+        }
 
     /**
      * Sleep for a fixed amount of time or until the thread is awakened for some purpose.
@@ -130,28 +149,29 @@ public class Dealer implements Runnable {
      */
     public void terminate() {
         // TODO implement
-        env.ui.dispose(); //closes window
-        terminate = true;
-        for (int i = players.length-1; i >= 0; i--) { 
-            players[i].terminate();
-        }
+        try {
+            env.ui.dispose();
+        } catch (Exception e) {}
         for (int i = players.length-1; i >= 0; i--) { //join the players' threads in reverse order
+            players[i].terminate();
             try {
+                players[i].getPlayerThread().interrupt();
                 players[i].getPlayerThread().join();
             } catch (InterruptedException e) {};
         }
-        // try {
-        //     Thread.currentThread().join();
-        // } catch (InterruptedException e) {}
+        terminate = true;
+        dealeThread.interrupt();
+        try {
+            dealeThread.join();
+        } catch (InterruptedException e) {}
     }
 
     /**
-     * Check if the game should be terminated or the game end conditions are met.
-     *
+     * Check if the game should be terminated or the game end conditions are met.     *
      * @return true iff the game should be finished.
      */
     private boolean shouldFinish() {
-        return terminate || env.util.findSets(deck, 1).size() == 0;
+        return terminate || env.util.findSets(cardsInDeckAndTable, 1).size() == 0;
     }
 
     /**
@@ -286,12 +306,8 @@ public class Dealer implements Runnable {
     public void addPlayerToCheck(Player player){
         try {
             playersToCheck.put(player);
-        } catch (InterruptedException e) {
-            //System.out.println("addPlayerToCheck. should not be reached");
-        }
-        //dealerThread.interrupt(); //if dealer thread is sleeping we wake him up
+        } catch (InterruptedException e) {}
         synchronized(waitOnObject){
-            //System.out.println("waitOnObject.notifyAll()");
             waitOnObject.notifyAll();
         }
     }
@@ -316,6 +332,9 @@ public class Dealer implements Runnable {
                     placeCardsOnTable();
                     curPlayer.keyPressed(Player.POINT_MSG);
                     updateTimerDisplay(true);
+                    for (Integer card : curSet) {
+                        cardsInDeckAndTable.remove(card);
+                    }
                 }
                 else{
                     curPlayer.keyPressed(Player.PENALTY_MSG);;
