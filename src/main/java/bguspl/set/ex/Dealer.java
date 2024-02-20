@@ -180,7 +180,7 @@ public class Dealer implements Runnable {
     private void removeCardsFromTable() {
         // TODO implement
         while (slotsToRemove.size()!=0){
-            int slot=slotsToRemove.removeFirst();
+            int slot=slotsToRemove.remove(0);
             table.removeCard(slot);
             for(int i=0; i<players.length; i++){
                // table.removeToken(players[i].id, slot);
@@ -201,7 +201,7 @@ public class Dealer implements Runnable {
         }
         int slot,card;
         while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
-            card = deck.removeFirst();
+            card = deck.remove(0);
             slot = findEmptySlot();
             if(findEmptySlot() >= 0){  //the slot is a legal one
                 table.placeCard(card, slot);
@@ -216,7 +216,7 @@ public class Dealer implements Runnable {
         Collections.shuffle(oneToTwelve);
         for (Integer slot : oneToTwelve) {
             if(!deck.isEmpty()){
-                table.placeCard(deck.removeFirst(), slot);
+                table.placeCard(deck.remove(0), slot);
             }
         }
     }
@@ -279,10 +279,10 @@ public class Dealer implements Runnable {
         List<Player> winners = new LinkedList<>();
         winners.add(players[0]);
         for (int i = 1; i < players.length; i++) {            
-            if(winners.getFirst().score() == players[i].score()){
+            if(winners.get(0).score() == players[i].score()){
                 winners.add(players[i]);
             }
-            else if(winners.getFirst().score() < players[i].score()){
+            else if(winners.get(0).score() < players[i].score()){
                 winners.clear();
                 winners.add(players[i]);
             }

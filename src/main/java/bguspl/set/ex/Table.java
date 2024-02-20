@@ -125,7 +125,7 @@ public class Table {
 
         // TODO implement
         while (!tokensOnTable.elementAt(slot).isEmpty()) {
-            removeToken(tokensOnTable.elementAt(slot).removeFirst(), slot);
+            removeToken(tokensOnTable.elementAt(slot).remove(0), slot);
         } 
         if(slotToCard[slot] != null){
             cardToSlot[slotToCard[slot]] = null;
