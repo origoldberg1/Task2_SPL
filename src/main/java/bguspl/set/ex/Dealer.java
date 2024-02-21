@@ -132,9 +132,15 @@ public class Dealer implements Runnable {
      */
     private void sleepUntilWokenOrTimeout() {   
         synchronized(waitOnObject){
-            try {
-                waitOnObject.wait(ONE_SECOND);
-            } catch (InterruptedException e) {}
+            if(System.currentTimeMillis() + 500 <= reshuffleTime){
+                try {
+                    waitOnObject.wait(10);
+                } catch (InterruptedException e) {}
+            }else{
+                try {
+                    waitOnObject.wait(ONE_SECOND);
+                } catch (InterruptedException e) {}
+            }
             checkPlayersSets();
         }
         dealerShouldReshuffle = System.currentTimeMillis() >= reshuffleTime;
@@ -234,7 +240,7 @@ public class Dealer implements Runnable {
     private void updateTimerDisplay(boolean reset) {
         // TODO implement
         if(reset){
-            reshuffleTime = SIXTEY_SECONDS + System.currentTimeMillis(); 
+            reshuffleTime = 10000 + System.currentTimeMillis(); 
             env.ui.setCountdown(env.config.turnTimeoutMillis, false);
         }
         else{
