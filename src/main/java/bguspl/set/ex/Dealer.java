@@ -69,9 +69,7 @@ public class Dealer implements Runnable {
     final int NUM_OF_SLOTS = 12;
 
     final int THREE = 3;
-    
-    final int ONE_HUNDRED_MILI_SEC = 100;
-    
+        
     final int ONE_SECOND = 1000;
     
     final int SIXTEY_SECONDS = 60000;
@@ -81,7 +79,6 @@ public class Dealer implements Runnable {
 
     public Dealer(Env env, Table table, Player[] players) {
         this.env = env;
-        this.dealerShouldReshuffle=false;
         this.table = table;
         this.players = players;
         this.deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
@@ -121,14 +118,14 @@ public class Dealer implements Runnable {
         }
     }
     
-        /**
-         * The inner loop of the dealer thread that runs as long as the countdown did not time out.
-         */
-        private void timerLoop() {
-            while(!dealerShouldReshuffle && !shouldFinish()){
-                sleepUntilWokenOrTimeout();
-            }
+    /**
+     * The inner loop of the dealer thread that runs as long as the countdown did not time out.
+     */
+    private void timerLoop() {
+        while(!dealerShouldReshuffle && !shouldFinish()){
+            sleepUntilWokenOrTimeout();
         }
+    }
 
     /**
      * Sleep for a fixed amount of time or until the thread is awakened for some purpose.
@@ -136,7 +133,7 @@ public class Dealer implements Runnable {
     private void sleepUntilWokenOrTimeout() {   
         synchronized(waitOnObject){
             try {
-                waitOnObject.wait(ONE_HUNDRED_MILI_SEC);
+                waitOnObject.wait(ONE_SECOND);
             } catch (InterruptedException e) {}
             checkPlayersSets();
         }
@@ -152,7 +149,8 @@ public class Dealer implements Runnable {
         try {
             env.ui.dispose();
         } catch (Exception e) {}
-        for (int i = players.length-1; i >= 0; i--) { //join the players' threads in reverse order
+        //join the players' threads in reverse order
+        for (int i = players.length-1; i >= 0; i--) { 
             players[i].terminate();
             try {
                 players[i].getPlayerThread().interrupt();
@@ -178,14 +176,12 @@ public class Dealer implements Runnable {
      * Checks cards should be removed from the table and removes them.
      */
     private void removeCardsFromTable() {
-        // TODO implement
         while (slotsToRemove.size()!=0){
             int slot=slotsToRemove.removeFirst();
             table.removeCard(slot);
             for(int i=0; i<players.length; i++){
-               // table.removeToken(players[i].id, slot);
-                players[i].getChosenSlots().remove(slot); //update player its token has been removed from the card
-            }   
+                players[i].getChosenSlots().remove(slot); 
+            }
         }
 
     }
@@ -194,20 +190,21 @@ public class Dealer implements Runnable {
      * Check if any cards can be removed from the deck and placed on the table.
      */
     private void placeCardsOnTable() {
-        // TODO implement
         shuffleDeck();
         if(table.countCards() == 0){
             placeTwelveCards();
         }
-        int slot,card;
-        while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
-            card = deck.removeFirst();
-            slot = findEmptySlot();
-            if(findEmptySlot() >= 0){  //the slot is a legal one
-                table.placeCard(card, slot);
+        else{
+            int slot;
+            while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
+                slot = findEmptySlot();
+                if(slot >= 0){  //the slot is a legal one
+                    table.placeCard(deck.removeFirst(), slot);
+                }
             }
         }
     }
+
     private void placeTwelveCards(){
         Vector<Integer> oneToTwelve = new Vector<Integer>();
         for (int i = 0; i < NUM_OF_SLOTS; i++) {

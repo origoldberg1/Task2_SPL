@@ -11,7 +11,6 @@ public class ChosenSlots{
     public ChosenSlots(Table table) {
         this.slotsVector = new Vector<>();
         this.table = table;
-
     }
     
     public synchronized Vector<Integer> getSlotsVector() {
