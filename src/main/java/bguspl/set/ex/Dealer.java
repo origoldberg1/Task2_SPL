@@ -177,7 +177,7 @@ public class Dealer implements Runnable {
      */
     private void removeCardsFromTable() {
         while (slotsToRemove.size()!=0){
-            int slot=slotsToRemove.removeFirst();
+            int slot=slotsToRemove.remove(0);
             table.removeCard(slot);
             for(int i=0; i<players.length; i++){
                 players[i].getChosenSlots().remove(slot); 
@@ -194,6 +194,7 @@ public class Dealer implements Runnable {
         if(table.countCards() == 0){
             placeTwelveCards();
         }
+<<<<<<< HEAD
         else{
             int slot;
             while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
@@ -201,6 +202,14 @@ public class Dealer implements Runnable {
                 if(slot >= 0){  //the slot is a legal one
                     table.placeCard(deck.removeFirst(), slot);
                 }
+=======
+        int slot,card;
+        while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
+            card = deck.remove(0);
+            slot = findEmptySlot();
+            if(findEmptySlot() >= 0){  //the slot is a legal one
+                table.placeCard(card, slot);
+>>>>>>> 01b7637d858b9b3c22f9ad7e68fb0ed9793ff2d4
             }
         }
     }
@@ -213,7 +222,7 @@ public class Dealer implements Runnable {
         Collections.shuffle(oneToTwelve);
         for (Integer slot : oneToTwelve) {
             if(!deck.isEmpty()){
-                table.placeCard(deck.removeFirst(), slot);
+                table.placeCard(deck.remove(0), slot);
             }
         }
     }
@@ -276,10 +285,10 @@ public class Dealer implements Runnable {
         List<Player> winners = new LinkedList<>();
         winners.add(players[0]);
         for (int i = 1; i < players.length; i++) {            
-            if(winners.getFirst().score() == players[i].score()){
+            if(winners.get(0).score() == players[i].score()){
                 winners.add(players[i]);
             }
-            else if(winners.getFirst().score() < players[i].score()){
+            else if(winners.get(0).score() < players[i].score()){
                 winners.clear();
                 winners.add(players[i]);
             }
