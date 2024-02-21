@@ -194,22 +194,13 @@ public class Dealer implements Runnable {
         if(table.countCards() == 0){
             placeTwelveCards();
         }
-<<<<<<< HEAD
         else{
             int slot;
             while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
                 slot = findEmptySlot();
                 if(slot >= 0){  //the slot is a legal one
-                    table.placeCard(deck.removeFirst(), slot);
+                    table.placeCard(deck.remove(0), slot);
                 }
-=======
-        int slot,card;
-        while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
-            card = deck.remove(0);
-            slot = findEmptySlot();
-            if(findEmptySlot() >= 0){  //the slot is a legal one
-                table.placeCard(card, slot);
->>>>>>> 01b7637d858b9b3c22f9ad7e68fb0ed9793ff2d4
             }
         }
     }
@@ -285,7 +276,7 @@ public class Dealer implements Runnable {
         List<Player> winners = new LinkedList<>();
         winners.add(players[0]);
         for (int i = 1; i < players.length; i++) {            
-            if(winners.get(0).score() == players[i].score()){
+            if(winners.getFirst().score() == players[i].score()){
                 winners.add(players[i]);
             }
             else if(winners.get(0).score() < players[i].score()){
