@@ -67,10 +67,12 @@ public class Dealer implements Runnable {
     private boolean dealerShouldReshuffle; 
 
     final int NUM_OF_SLOTS = 12;
-
-    final int THREE = 3;
+    
+    final int TEN_MILI_SEC = 10;
         
     final int ONE_SECOND = 1000;
+
+    final int FIVE_SECONDS = 5000;
     
     final int SIXTEY_SECONDS = 60000;
 
@@ -132,13 +134,13 @@ public class Dealer implements Runnable {
      */
     private void sleepUntilWokenOrTimeout() {   
         synchronized(waitOnObject){
-            if(System.currentTimeMillis() + 500 <= reshuffleTime){
+            if(System.currentTimeMillis() + FIVE_SECONDS >= reshuffleTime){
                 try {
-                    waitOnObject.wait(10);
+                    waitOnObject.wait(TEN_MILI_SEC);
                 } catch (InterruptedException e) {}
             }else{
                 try {
-                    waitOnObject.wait(ONE_SECOND);
+                    waitOnObject.wait(100);
                 } catch (InterruptedException e) {}
             }
             checkPlayersSets();
