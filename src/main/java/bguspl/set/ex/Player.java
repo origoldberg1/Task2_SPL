@@ -98,6 +98,10 @@ public class Player implements Runnable {
 
      private boolean inCheckByDealer;
 
+     final Object waitForAi = new Object();
+
+     public Boolean aiStarted;
+
     /**
      * The class constructor.
      *
@@ -120,7 +124,7 @@ public class Player implements Runnable {
         this.inCheckByDealer = false;
         this.featureSize = env.config.featureSize;
         this.tableSize = env.config.tableSize;
-
+        this.aiStarted = human;
     }
 
     /**
@@ -130,7 +134,14 @@ public class Player implements Runnable {
     public void run() {
         playerThread = Thread.currentThread();
         env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
-        if (!human) createArtificialIntelligence();
+        if (!human) {
+            createArtificialIntelligence();
+            System.out.println("started player ai" + id);
+            aiStarted = true;
+            synchronized(waitForAi){
+                waitForAi.notifyAll();
+            }
+        }
 
         while (!terminate) {
             try{
@@ -154,8 +165,7 @@ public class Player implements Runnable {
                     }
                     else{  //we need to place token
                         if(chosenSlots.size() != featureSize){
-                            if(table.slotToCard[action] != null){
-                                table.placeToken(id, action);
+                            if(table.placeToken(id, action)){
                                 chosenSlots.add(action); //place the theSlot from the array
                                 if (chosenSlots.size() == featureSize){
                                     inCheckByDealer = true;
@@ -165,7 +175,7 @@ public class Player implements Runnable {
                             }
                         }
                     }
-                }             
+                }
             }
             catch (InterruptedException ignored){}
         }
@@ -259,10 +269,10 @@ public class Player implements Runnable {
         return this.playerThread;
     }
     
-    public void StartPlayerThread(){
-        playerThread=new Thread(this);
-        playerThread.start();
-    }
+    // public void startPlayerThread(){
+    //     playerThread = new Thread(this);
+    //     playerThread.start();
+    // }
 
     // public Object getLockForPlayer(){
     //     return lockForPlayer;

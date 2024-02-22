@@ -2,8 +2,6 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
-import static java.lang.String.format;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -62,7 +60,7 @@ public class Dealer implements Runnable {
      */
     private BlockingQueue<Player> playersToCheck;
 
-    private Thread dealeThread;
+    private Thread dealerThread;
 
     private boolean dealerShouldReshuffle; 
 
@@ -70,11 +68,13 @@ public class Dealer implements Runnable {
     
     final int TEN_MILI_SEC = 10;
 
-    final int HUNDRED_MILI_SEC = 100;
+    final int ONE_SECOND = 1000;
             
     final Object waitOnObject = new Object();
+    
     public volatile boolean dealerIsReshuffling;
 
+    public List<Thread> threadOrder;
 
     public Dealer(Env env, Table table, Player[] players) {
         this.env = env;
@@ -89,6 +89,7 @@ public class Dealer implements Runnable {
         cardsInDeckAndTable.addAll(deck);
         this.tableSize = env.config.tableSize;
         this.dealerIsReshuffling=true;
+        this.threadOrder = new LinkedList<>();
     }
 
     /**
@@ -96,10 +97,18 @@ public class Dealer implements Runnable {
      */
     @Override
     public void run() {
-        this.dealeThread = Thread.currentThread();
+        this.dealerThread = Thread.currentThread();
         env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
         for (Player player : players) {
-            player.StartPlayerThread();
+            new Thread(player).start();
+            System.out.println("started player" + player.id);
+            synchronized(player.waitForAi){
+                while(!player.aiStarted){
+                    try {
+                        player.waitForAi.wait();
+                    } catch (InterruptedException e) {}
+                }
+            }
         }
         while (!shouldFinish()) {
             placeCardsOnTable();
@@ -133,7 +142,7 @@ public class Dealer implements Runnable {
     /**
      * Sleep for a fixed amount of time or until the thread is awakened for some purpose.
      */
-    private void sleepUntilWokenOrTimeout() {   
+    private void sleepUntilWokenOrTimeout() {
         synchronized(waitOnObject){
             if(System.currentTimeMillis() + env.config.turnTimeoutWarningMillis >= reshuffleTime){
                 try {
@@ -141,7 +150,7 @@ public class Dealer implements Runnable {
                 } catch (InterruptedException e) {}
             }else{
                 try {
-                    waitOnObject.wait(HUNDRED_MILI_SEC);
+                    waitOnObject.wait(ONE_SECOND);
                 } catch (InterruptedException e) {}
             }
             checkPlayersSets();
@@ -159,18 +168,21 @@ public class Dealer implements Runnable {
             env.ui.dispose();
         } catch (Exception e) {}
         //join the players' threads in reverse order
-        for (int i = players.length-1; i >= 0; i--) { 
+        for (int i = players.length - 1; i >= 0; i--) { 
             players[i].terminate();
             try {
                 players[i].getPlayerThread().interrupt();
                 players[i].getPlayerThread().join();
             } catch (InterruptedException e) {};
         }
+        while(!threadOrder.isEmpty()){
+
+        }
         terminate = true;
-        dealeThread.interrupt();
-        try {
-            dealeThread.join();
-        } catch (InterruptedException e) {}
+        // dealeThread.interrupt();
+        // try {
+        //     dealeThread.join();
+        // } catch (InterruptedException e) {}
     }
 
     /**
@@ -228,8 +240,8 @@ public class Dealer implements Runnable {
     }
 
     private int findEmptySlot(){
-        for (int i = 0; i < table.slotToCard.length; i++) {
-            if(table.slotToCard[i] == null){
+        for (int i = 0; i < table.getSlotToCard().length; i++) {
+            if(table.getSlotToCard()[i] == null){
                 return i;
             }
         }
@@ -259,8 +271,8 @@ public class Dealer implements Runnable {
     private void removeAllCardsFromTable() {
         // TODO implement
         for (int i = 0; i < tableSize; i++) {
-            if(table.slotToCard[i] != null){
-                deck.add(table.slotToCard[i]);
+            if(table.getSlotToCard()[i] != null){
+                deck.add(table.getSlotToCard()[i]);
             }
             if(!slotsToRemove.contains(i)){
                 slotsToRemove.add(i);
@@ -347,7 +359,7 @@ public class Dealer implements Runnable {
     public boolean testSet(int[]cards){
         if(env.util.testSet(cards)){
             for (int i = 0; i < cards.length; i++) {
-                slotsToRemove.add(table.cardToSlot[cards[i]]);
+                slotsToRemove.add(table.getCardToSlot()[cards[i]]);
             }
             return true;
         }
@@ -357,7 +369,7 @@ public class Dealer implements Runnable {
     public int[] cardsToSlots(int[]cards){
         int [] slots = new int[cards.length];
         for (int i = 0; i < slots.length; i++) {
-            slots[i] = table.cardToSlot[cards[i]];
+            slots[i] = table.getCardToSlot()[cards[i]];
         }
         return slots;
     }

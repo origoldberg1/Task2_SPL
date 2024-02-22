@@ -52,7 +52,7 @@ public class ChosenSlots{
     public int[] slotsToCards(int[] slots){
         int[]cards = new int[slots.length];
         for (int i = 0; i < cards.length; i++) {
-            cards[i] = table.slotToCard[slots[i]];
+            cards[i] = table.getSlotToCard()[slots[i]];
         }
         return cards;
     }

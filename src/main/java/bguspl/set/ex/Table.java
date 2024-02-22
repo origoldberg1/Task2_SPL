@@ -36,8 +36,9 @@ public class Table {
     /**
      * players that have placed tokens on each slot
      */
-    protected Vector<Vector<Integer>> tokensOnTable;
+    private Vector<Vector<Integer>> tokensOnTable;
 
+    
     private final int tableSize;
 
     /**
@@ -139,10 +140,14 @@ public class Table {
      * @param player - the player the token belongs to.
      * @param slot   - the slot on which to place the token.
      */
-    public synchronized void placeToken(int player, int slot) {
+    public synchronized boolean placeToken(int player, int slot) {
         // TODO implement
-        tokensOnTable.elementAt(slot).add(player);
-        env.ui.placeToken(player, slot);
+        if(slotToCard[slot] != null){
+            tokensOnTable.elementAt(slot).add(player);
+            env.ui.placeToken(player, slot);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -159,4 +164,17 @@ public class Table {
         env.ui.removeToken(player, slot);
         return true;
     }
+
+    public synchronized Integer[] getSlotToCard() {
+        return slotToCard;
+    }
+
+    public synchronized Integer[] getCardToSlot() {
+        return cardToSlot;
+    }
+
+    public synchronized Vector<Vector<Integer>> getTokensOnTable() {
+        return tokensOnTable;
+    }
+
  }
