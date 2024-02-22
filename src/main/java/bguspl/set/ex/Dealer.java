@@ -69,16 +69,11 @@ public class Dealer implements Runnable {
     final int tableSize;
     
     final int TEN_MILI_SEC = 10;
-        
-    final int ONE_SECOND = 1000;
 
-    final int FIVE_SECONDS = 5000;
-    
-    final int SIXTEY_SECONDS = 60000;
-
+    final int HUNDRED_MILI_SEC = 100;
+            
     final Object waitOnObject = new Object();
-    public volatile boolean dealerIsReshuffle;
-    public volatile boolean dealerChangesCard;
+    public volatile boolean dealerIsReshuffling;
 
 
     public Dealer(Env env, Table table, Player[] players) {
@@ -93,8 +88,7 @@ public class Dealer implements Runnable {
         this.cardsInDeckAndTable = new ArrayList<>();
         cardsInDeckAndTable.addAll(deck);
         this.tableSize = env.config.tableSize;
-        this.dealerChangesCard=false;
-        this.dealerIsReshuffle=true;
+        this.dealerIsReshuffling=true;
     }
 
     /**
@@ -109,13 +103,12 @@ public class Dealer implements Runnable {
         }
         while (!shouldFinish()) {
             placeCardsOnTable();
-            dealerIsReshuffle=false;
+            dealerIsReshuffling=false;
             dealerShouldReshuffle=false;
-            notifyPlayers();
             updateTimerDisplay(true);
             timerLoop(); //self mark- should do things until we need to rersheufle 
             checkPlayersSets();
-            dealerIsReshuffle=true;
+            dealerIsReshuffling=true;
             removeAllCardsFromTable();
         }
         env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
@@ -142,13 +135,13 @@ public class Dealer implements Runnable {
      */
     private void sleepUntilWokenOrTimeout() {   
         synchronized(waitOnObject){
-            if(System.currentTimeMillis() + FIVE_SECONDS >= reshuffleTime){
+            if(System.currentTimeMillis() + env.config.turnTimeoutWarningMillis >= reshuffleTime){
                 try {
                     waitOnObject.wait(TEN_MILI_SEC);
                 } catch (InterruptedException e) {}
             }else{
                 try {
-                    waitOnObject.wait(100);
+                    waitOnObject.wait(HUNDRED_MILI_SEC);
                 } catch (InterruptedException e) {}
             }
             checkPlayersSets();
@@ -193,7 +186,6 @@ public class Dealer implements Runnable {
      */
     private void removeCardsFromTable() {
         while (slotsToRemove.size()!=0){
-            dealerChangesCard=true;
             int slot=slotsToRemove.remove(0);
             table.removeCard(slot);
             for(int i=0; i<players.length; i++){
@@ -220,7 +212,6 @@ public class Dealer implements Runnable {
                 }
             }
         }
-        dealerChangesCard=false;
     }
 
     private void placeAllSlots(){
@@ -252,7 +243,7 @@ public class Dealer implements Runnable {
     private void updateTimerDisplay(boolean reset) {
         // TODO implement
         if(reset){
-            reshuffleTime = 10000 + System.currentTimeMillis(); 
+            reshuffleTime = env.config.turnTimeoutMillis + System.currentTimeMillis(); 
             env.ui.setCountdown(env.config.turnTimeoutMillis, false);
         }
         else{
@@ -375,11 +366,11 @@ public class Dealer implements Runnable {
         Collections.shuffle(deck);
     }
 
-    public void notifyPlayers(){ //make sure with Ori
-        for(Player player:players){
-            synchronized(player.getLockForPlayer()){
-                player.getLockForPlayer().notifyAll();
-            }
-        }
-    }
+    // public void notifyPlayers(){ //make sure with Ori
+    //     for(Player player:players){
+    //         synchronized(player.getLockForPlayer()){
+    //             player.getLockForPlayer().notifyAll();
+    //         }
+    //     }
+    // }
 }

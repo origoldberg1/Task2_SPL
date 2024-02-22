@@ -82,7 +82,7 @@ public class Player implements Runnable {
       */
      private Dealer dealer;
 
-     private Object lockForPlayer;
+     //private Object lockForPlayer;
      
      final int ONE_SECOND = 1000;
      
@@ -115,7 +115,7 @@ public class Player implements Runnable {
         this.human = human;
         this.incomingActions = new ArrayBlockingQueue<>(env.config.featureSize);
         freezeUntil= System.currentTimeMillis()-1;
-        this.lockForPlayer = new Object();
+        //this.lockForPlayer = new Object();
         this.chosenSlots = new ChosenSlots(table, env);
         this.inCheckByDealer = false;
         this.featureSize = env.config.featureSize;
@@ -204,7 +204,7 @@ public class Player implements Runnable {
      */
     public void keyPressed(int slot) { 
         //TODO implement
-        if ((inCheckByDealer && slot >= 0) || dealer.dealerChangesCard || dealer.dealerIsReshuffle) {return;}
+        if ((inCheckByDealer && slot >= 0) || dealer.dealerIsReshuffling) {return;}
         try { 
             incomingActions.put(slot);//when the queue is full the thread will wait
         } catch(InterruptedException ignored){}
@@ -264,9 +264,9 @@ public class Player implements Runnable {
         playerThread.start();
     }
 
-    public Object getLockForPlayer(){
-        return lockForPlayer;
-    }
+    // public Object getLockForPlayer(){
+    //     return lockForPlayer;
+    // }
 
     public ChosenSlots getChosenSlots(){
         return chosenSlots;
