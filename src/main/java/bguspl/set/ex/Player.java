@@ -204,7 +204,7 @@ public class Player implements Runnable {
      */
     public void keyPressed(int slot) { 
         //TODO implement
-        if (inCheckByDealer && slot >= 0) {return;}
+        if ((inCheckByDealer && slot >= 0) || dealer.dealerChangesCard || dealer.dealerIsReshuffle) {return;}
         try { 
             incomingActions.put(slot);//when the queue is full the thread will wait
         } catch(InterruptedException ignored){}
@@ -271,6 +271,5 @@ public class Player implements Runnable {
     public ChosenSlots getChosenSlots(){
         return chosenSlots;
     }
-    
 }
 

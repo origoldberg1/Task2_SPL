@@ -77,6 +77,8 @@ public class Dealer implements Runnable {
     final int SIXTEY_SECONDS = 60000;
 
     final Object waitOnObject = new Object();
+    public volatile boolean dealerIsReshuffle;
+    public volatile boolean dealerChangesCard;
 
 
     public Dealer(Env env, Table table, Player[] players) {
@@ -91,6 +93,8 @@ public class Dealer implements Runnable {
         this.cardsInDeckAndTable = new ArrayList<>();
         cardsInDeckAndTable.addAll(deck);
         this.tableSize = env.config.tableSize;
+        this.dealerChangesCard=false;
+        this.dealerIsReshuffle=true;
     }
 
     /**
@@ -105,10 +109,13 @@ public class Dealer implements Runnable {
         }
         while (!shouldFinish()) {
             placeCardsOnTable();
+            dealerIsReshuffle=false;
             dealerShouldReshuffle=false;
+            notifyPlayers();
             updateTimerDisplay(true);
             timerLoop(); //self mark- should do things until we need to rersheufle 
             checkPlayersSets();
+            dealerIsReshuffle=true;
             removeAllCardsFromTable();
         }
         env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
@@ -186,6 +193,7 @@ public class Dealer implements Runnable {
      */
     private void removeCardsFromTable() {
         while (slotsToRemove.size()!=0){
+            dealerChangesCard=true;
             int slot=slotsToRemove.remove(0);
             table.removeCard(slot);
             for(int i=0; i<players.length; i++){
@@ -212,6 +220,7 @@ public class Dealer implements Runnable {
                 }
             }
         }
+        dealerChangesCard=false;
     }
 
     private void placeAllSlots(){
@@ -285,7 +294,7 @@ public class Dealer implements Runnable {
         List<Player> winners = new LinkedList<>();
         winners.add(players[0]);
         for (int i = 1; i < players.length; i++) {            
-            if(winners.getFirst().score() == players[i].score()){
+            if(winners.get(0).score() == players[i].score()){
                 winners.add(players[i]);
             }
             else if(winners.get(0).score() < players[i].score()){
@@ -366,7 +375,7 @@ public class Dealer implements Runnable {
         Collections.shuffle(deck);
     }
 
-    public void notifyPlayers(){
+    public void notifyPlayers(){ //make sure with Ori
         for(Player player:players){
             synchronized(player.getLockForPlayer()){
                 player.getLockForPlayer().notifyAll();
