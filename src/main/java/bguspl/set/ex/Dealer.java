@@ -66,7 +66,7 @@ public class Dealer implements Runnable {
 
     private boolean dealerShouldReshuffle; 
 
-    final int NUM_OF_SLOTS = 12;
+    final int tableSize;
     
     final int TEN_MILI_SEC = 10;
         
@@ -90,6 +90,7 @@ public class Dealer implements Runnable {
         this.dealerShouldReshuffle =true;
         this.cardsInDeckAndTable = new ArrayList<>();
         cardsInDeckAndTable.addAll(deck);
+        this.tableSize = env.config.tableSize;
     }
 
     /**
@@ -200,11 +201,11 @@ public class Dealer implements Runnable {
     private void placeCardsOnTable() {
         shuffleDeck();
         if(table.countCards() == 0){
-            placeTwelveCards();
+            placeAllSlots();
         }
         else{
             int slot;
-            while(!deck.isEmpty() && table.countCards() < NUM_OF_SLOTS){
+            while(!deck.isEmpty() && table.countCards() < tableSize){
                 slot = findEmptySlot();
                 if(slot >= 0){  //the slot is a legal one
                     table.placeCard(deck.remove(0), slot);
@@ -213,13 +214,13 @@ public class Dealer implements Runnable {
         }
     }
 
-    private void placeTwelveCards(){
-        Vector<Integer> oneToTwelve = new Vector<Integer>();
-        for (int i = 0; i < NUM_OF_SLOTS; i++) {
-            oneToTwelve.add(i);
+    private void placeAllSlots(){
+        Vector<Integer> allSlots = new Vector<Integer>();
+        for (int i = 0; i < tableSize; i++) {
+            allSlots.add(i);
         }
-        Collections.shuffle(oneToTwelve);
-        for (Integer slot : oneToTwelve) {
+        Collections.shuffle(allSlots);
+        for (Integer slot : allSlots) {
             if(!deck.isEmpty()){
                 table.placeCard(deck.remove(0), slot);
             }
@@ -257,7 +258,7 @@ public class Dealer implements Runnable {
      */
     private void removeAllCardsFromTable() {
         // TODO implement
-        for (int i = 0; i < NUM_OF_SLOTS; i++) {
+        for (int i = 0; i < tableSize; i++) {
             if(table.slotToCard[i] != null){
                 deck.add(table.slotToCard[i]);
             }

@@ -33,13 +33,12 @@ public class Table {
      */
     protected final Integer[] cardToSlot; // slot per card (if any)
 
-
     /**
      * players that have placed tokens on each slot
      */
     protected Vector<Vector<Integer>> tokensOnTable;
 
-    private final int NUM_OF_SLOTS = 12;
+    private final int tableSize;
 
     /**
      * Constructor for testing.
@@ -53,6 +52,7 @@ public class Table {
         this.env = env;
         this.slotToCard = slotToCard;
         this.cardToSlot = cardToSlot;
+        this.tableSize = env.config.tableSize;
     }
 
     /**
@@ -64,7 +64,7 @@ public class Table {
 
         this(env, new Integer[env.config.tableSize], new Integer[env.config.deckSize]);
         this.tokensOnTable = new Vector<>();
-        for (int i = 0; i < NUM_OF_SLOTS; i++) {
+        for (int i = 0; i < tableSize; i++) {
             this.tokensOnTable.add(new Vector<>());
         }
     }

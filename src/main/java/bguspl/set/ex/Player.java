@@ -83,18 +83,18 @@ public class Player implements Runnable {
      private Dealer dealer;
 
      private Object lockForPlayer;
-
-     final int THREE = 3;
-
+     
      final int ONE_SECOND = 1000;
-
+     
      public static final int PENALTY_MSG = -1;
      
      public static final int POINT_MSG = -2;
-
+     
      public static final int CONTINUEPLAY_MSG = -3;
+     
+     final int featureSize;
 
-     final int NUM_OF_SLOTS = 12;
+     final int tableSize;
 
      private boolean inCheckByDealer;
 
@@ -113,11 +113,14 @@ public class Player implements Runnable {
         this.table = table;
         this.id = id;
         this.human = human;
-        this.incomingActions = new ArrayBlockingQueue<>(THREE);
+        this.incomingActions = new ArrayBlockingQueue<>(env.config.featureSize);
         freezeUntil= System.currentTimeMillis()-1;
         this.lockForPlayer = new Object();
-        this.chosenSlots = new ChosenSlots(table);
+        this.chosenSlots = new ChosenSlots(table, env);
         this.inCheckByDealer = false;
+        this.featureSize = env.config.featureSize;
+        this.tableSize = env.config.tableSize;
+
     }
 
     /**
@@ -150,11 +153,11 @@ public class Player implements Runnable {
                         chosenSlots.remove(action); 
                     }
                     else{  //we need to place token
-                        if(chosenSlots.size() != THREE){
+                        if(chosenSlots.size() != featureSize){
                             if(table.slotToCard[action] != null){
                                 table.placeToken(id, action);
                                 chosenSlots.add(action); //place the theSlot from the array
-                                if (chosenSlots.size() == THREE){
+                                if (chosenSlots.size() == featureSize){
                                     inCheckByDealer = true;
                                     incomingActions.clear();   
                                     dealer.addPlayerToCheck(this); // calling the dealer to check its slots
@@ -180,7 +183,7 @@ public class Player implements Runnable {
             env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
                 // TODO implement player key press simulator
-                keyPressed((int) (Math.random() * NUM_OF_SLOTS));
+                keyPressed((int) (Math.random() * tableSize));
             }
             env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
         }, "computer-" + id);
@@ -227,8 +230,6 @@ public class Player implements Runnable {
          }
         env.ui.setScore(id, ++score);
     }        
-
-        
 
     /**
      * Penalize a player and perform other related actions.

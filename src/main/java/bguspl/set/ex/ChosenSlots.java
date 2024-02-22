@@ -2,15 +2,18 @@ package bguspl.set.ex;
 
 import java.util.Vector;
 
+import bguspl.set.Env;
+
 public class ChosenSlots{
 
     private Vector<Integer> slotsVector;
     Table table;
-    final int THREE = 3;
+    final int featureSize;
     
-    public ChosenSlots(Table table) {
+    public ChosenSlots(Table table, Env env) {
         this.slotsVector = new Vector<>();
         this.table = table;
+        this.featureSize = env.config.featureSize;
     }
     
     public synchronized Vector<Integer> getSlotsVector() {
@@ -40,7 +43,7 @@ public class ChosenSlots{
     }
 
     public synchronized int[] convertToSet(){
-        if (size() == THREE) {
+        if (size() == featureSize) {
             return slotsToCards(setVecToArr(slotsVector));
         } 
         return null;
@@ -55,7 +58,7 @@ public class ChosenSlots{
     }
 
     public int[] setVecToArr(Vector<Integer> vec){
-        int[] res = new int[THREE];
+        int[] res = new int[featureSize];
         for (int i = 0; i < res.length; i++) {
             res[i] = vec.get(i);
         }
