@@ -100,7 +100,7 @@ public class Player implements Runnable {
 
      final Object waitForAi = new Object();
 
-     public Boolean aiStarted;
+     public volatile Boolean aiStarted;
 
     /**
      * The class constructor.
