@@ -136,7 +136,6 @@ public class Player implements Runnable {
         env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
         if (!human) {
             createArtificialIntelligence();
-            System.out.println("started player ai" + id);
             aiStarted = true;
             synchronized(waitForAi){
                 waitForAi.notifyAll();
@@ -268,15 +267,6 @@ public class Player implements Runnable {
     public Thread getPlayerThread() {
         return this.playerThread;
     }
-    
-    // public void startPlayerThread(){
-    //     playerThread = new Thread(this);
-    //     playerThread.start();
-    // }
-
-    // public Object getLockForPlayer(){
-    //     return lockForPlayer;
-    // }
 
     public ChosenSlots getChosenSlots(){
         return chosenSlots;

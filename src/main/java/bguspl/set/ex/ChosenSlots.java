@@ -49,7 +49,7 @@ public class ChosenSlots{
         return null;
     }
 
-    public int[] slotsToCards(int[] slots){
+    private int[] slotsToCards(int[] slots){
         int[]cards = new int[slots.length];
         for (int i = 0; i < cards.length; i++) {
             cards[i] = table.getSlotToCard()[slots[i]];
@@ -57,7 +57,7 @@ public class ChosenSlots{
         return cards;
     }
 
-    public int[] setVecToArr(Vector<Integer> vec){
+    private int[] setVecToArr(Vector<Integer> vec){
         int[] res = new int[featureSize];
         for (int i = 0; i < res.length; i++) {
             res[i] = vec.get(i);

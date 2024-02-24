@@ -101,9 +101,8 @@ public class Dealer implements Runnable {
         env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
         for (Player player : players) {
             new Thread(player).start();
-            System.out.println("started player" + player.id);
             synchronized(player.waitForAi){
-                while(!player.aiStarted){
+                if(!player.aiStarted){
                     try {
                         player.waitForAi.wait();
                     } catch (InterruptedException e) {}
@@ -175,13 +174,10 @@ public class Dealer implements Runnable {
                 players[i].getPlayerThread().join();
             } catch (InterruptedException e) {};
         }
-        while(!threadOrder.isEmpty()){
-
-        }
         terminate = true;
-        // dealeThread.interrupt();
+        // dealerThread.interrupt();
         // try {
-        //     dealeThread.join();
+        //     dealerThread.join();
         // } catch (InterruptedException e) {}
     }
 
@@ -197,14 +193,13 @@ public class Dealer implements Runnable {
      * Checks cards should be removed from the table and removes them.
      */
     private void removeCardsFromTable() {
-        while (slotsToRemove.size()!=0){
+        while (slotsToRemove.size() != 0){
             int slot=slotsToRemove.remove(0);
             table.removeCard(slot);
-            for(int i=0; i<players.length; i++){
+            for(int i = 0; i<players.length; i++){
                 players[i].getChosenSlots().remove(slot); 
             }
         }
-
     }
 
     /**
@@ -378,11 +373,4 @@ public class Dealer implements Runnable {
         Collections.shuffle(deck);
     }
 
-    // public void notifyPlayers(){ //make sure with Ori
-    //     for(Player player:players){
-    //         synchronized(player.getLockForPlayer()){
-    //             player.getLockForPlayer().notifyAll();
-    //         }
-    //     }
-    // }
 }
