@@ -1,7 +1,5 @@
 package bguspl.set.ex;
 
-import java.util.Vector;
-
 import bguspl.set.Env;
 
 import java.util.concurrent.ArrayBlockingQueue;

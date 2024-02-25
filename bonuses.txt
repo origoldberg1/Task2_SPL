@@ -47,9 +47,13 @@ config.turnTimeoutMillis = 0: display a timer since the last action (reshuffle o
 Note: in modes without a countdown timer the dealer must ensure there is always at least one legal set on the table.
 
 
-1.
-2.
-3.
+1. In the method updateTimerDisplay in  Dealer class we checked the value of env.config.turnTimeoutMillis, and proceeded accordingly.
+for if turnTimeoutMillis =0 we added the variable "lastAction" that keeps the time in which the last action has occured. 
+and displayed the time using setElapsed, instead if setCountDown.
+if if turnTimeoutMillis <= 0 we also checked if there are sets on the table using a funcion we added in Table class. 
+if there were no sets on the table, the Dealer reshuffles.
+2.Dealer - updateTimerDisplay, run. Table - hasNoSetOnTable.
+3. We changed the value of turnTimeoutMillis in the config.properties files and ran tests.
 --------------------
 
 4.⁠ ⁠Making sure that the threads do not wake up unless some actual job needs to be done (e.g., a value needs to be

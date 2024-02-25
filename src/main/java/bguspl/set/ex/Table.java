@@ -2,13 +2,11 @@ package bguspl.set.ex;
 
 import bguspl.set.Env;
 
-import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
-import java.util.concurrent.BlockingDeque;
 import java.util.stream.Collectors;
 
 

@@ -125,6 +125,7 @@ public class Dealer implements Runnable {
             timerLoop();
             checkPlayersSets();
             dealerIsReshuffling=true;
+            lastAction = System.currentTimeMillis();
             removeAllCardsFromTable();
         }
         env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
