@@ -76,6 +76,9 @@ public class Dealer implements Runnable {
 
     public List<Thread> threadOrder;
 
+    private long lastAction;
+
+
     public Dealer(Env env, Table table, Player[] players) {
         this.env = env;
         this.table = table;
@@ -90,6 +93,7 @@ public class Dealer implements Runnable {
         this.tableSize = env.config.tableSize;
         this.dealerIsReshuffling=true;
         this.threadOrder = new LinkedList<>();
+        lastAction = env.config.turnTimeoutMillis;
     }
 
     /**
@@ -249,15 +253,25 @@ public class Dealer implements Runnable {
      */
     private void updateTimerDisplay(boolean reset) {
         // TODO implement
-        if(reset){
-            reshuffleTime = env.config.turnTimeoutMillis + System.currentTimeMillis(); 
-            env.ui.setCountdown(env.config.turnTimeoutMillis, false);
+        if(env.config.turnTimeoutMillis > 0){
+            if(reset){
+                reshuffleTime = env.config.turnTimeoutMillis + System.currentTimeMillis(); 
+                env.ui.setCountdown(env.config.turnTimeoutMillis, false);
+            }
+            else{
+                long timeLeft = reshuffleTime - System.currentTimeMillis();
+                boolean warn = timeLeft < env.config.turnTimeoutWarningMillis;
+                env.ui.setCountdown(timeLeft, warn);
+            }
         }
-        else{
-            long timeLeft = reshuffleTime - System.currentTimeMillis();
-            boolean warn = timeLeft < env.config.turnTimeoutWarningMillis;
-            env.ui.setCountdown(timeLeft, warn);
+        else if(env.config.turnTimeoutMillis == 0){
+            if(reset){
+                lastAction = System.currentTimeMillis();
+            }
+            env.ui.setElapsed(System.currentTimeMillis() - lastAction);
+            //check if there are sets on the table
         }
+            //check if there are sets on the table
     }
 
     /**

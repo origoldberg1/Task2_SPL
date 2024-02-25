@@ -35,7 +35,7 @@ thoes actions.
 2.⁠ We created the players' threads int the Dealer's run() method. We forced the opening of the ai Thread in the Player's run() method
 and the Dealer's run() method.
 We terminated the players' threads in the Dealer's run() method.
-3.⁠ ⁠When each Thread was created/terminated we printed a message. On top of that, we reviewed the logs.
+3.⁠ ⁠When each Thread was created/terminated we printed a message.
 
 
 
@@ -46,7 +46,6 @@ config.turnTimeoutMillis < 0: display nothing.
 config.turnTimeoutMillis = 0: display a timer since the last action (reshuffle or set collected).
 Note: in modes without a countdown timer the dealer must ensure there is always at least one legal set on the table.
 
-We are not entitled to this bonus.
 
 1. 
 2.
