@@ -47,7 +47,7 @@ config.turnTimeoutMillis = 0: display a timer since the last action (reshuffle o
 Note: in modes without a countdown timer the dealer must ensure there is always at least one legal set on the table.
 
 
-1. 
+1.
 2.
 3.
 --------------------
@@ -60,7 +60,7 @@ changed on the display, key input needs to be handled, etc.) and the only thread
 1. We will use the terms "sleep" and "wake up", for both the actions "sleep" and "ineterrupt", and "wait" and "notify".
 To be exact, we used the method sleep when the only reason for the thread to wake up was time passing (like in Player's penalty() method),
 and the wait method when there were reasons other than time to wake up (like in Dealer's sleepUntilWokenOrTimeout() method).
-Dealer - we only woke the dealer up every one second to update the timer deispley, 
+Dealer - we only woke the dealer up every half a second to update the timer deispley smoothly, 
 disincluding the last 5 seconds before reshuffling, in witch we woke him up every 10 milliseconds, again, to update the timer display.
 In addition, the players woke the Dealer up every time they declared a set.
 Moreover, when creating players' threads in the Dealer's run() method, the sleeps until the player's ai thread is created. By that we 

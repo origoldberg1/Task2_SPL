@@ -6,7 +6,14 @@ import bguspl.set.Env;
 
 public class ChosenSlots{
 
+    /**
+     * the slots on which a player has tokens
+     */
     private Vector<Integer> slotsVector;
+
+    /**
+     * Game entities.
+     */
     Table table;
     final int featureSize;
     
@@ -64,4 +71,5 @@ public class ChosenSlots{
         }
         return res;
     }
+
 }

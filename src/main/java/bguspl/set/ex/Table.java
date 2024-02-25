@@ -4,6 +4,7 @@ import bguspl.set.Env;
 
 import java.net.InetAddress;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
@@ -38,7 +39,14 @@ public class Table {
      */
     private Vector<Vector<Integer>> tokensOnTable;
 
-    
+    /**
+     * a list of cards(integers) that are on the table. used to check if there is a set on the table
+     */
+    private List<Integer> cardsOnTable;
+
+    /**
+     * Game entities.
+     */
     private final int tableSize;
 
     /**
@@ -54,6 +62,7 @@ public class Table {
         this.slotToCard = slotToCard;
         this.cardToSlot = cardToSlot;
         this.tableSize = env.config.tableSize;
+        this.cardsOnTable = new LinkedList<>();
     }
 
     /**
@@ -110,8 +119,7 @@ public class Table {
 
         cardToSlot[card] = slot;
         slotToCard[slot] = card;
-
-        // TODO implement
+        cardsOnTable.add(card);
         env.ui.placeCard(card, slot);
     }
 
@@ -124,13 +132,16 @@ public class Table {
             Thread.sleep(env.config.tableDelayMillis);
         } catch (InterruptedException ignored) {}
 
-        // TODO implement
         while (!tokensOnTable.elementAt(slot).isEmpty()) {
             removeToken(tokensOnTable.elementAt(slot).remove(0), slot);
         } 
-        if(slotToCard[slot] != null){
-            cardToSlot[slotToCard[slot]] = null;
+        Integer card = slotToCard[slot];
+        if(card != null){
+            cardToSlot[card] = null;
             slotToCard[slot] = null;
+            if(cardsOnTable.contains(card)){
+                cardsOnTable.remove(cardsOnTable.indexOf(card));
+            }
             env.ui.removeCard(slot);
         }
     }
@@ -141,7 +152,6 @@ public class Table {
      * @param slot   - the slot on which to place the token.
      */
     public synchronized boolean placeToken(int player, int slot) {
-        // TODO implement
         if(slotToCard[slot] != null){
             tokensOnTable.elementAt(slot).add(player);
             env.ui.placeToken(player, slot);
@@ -157,7 +167,6 @@ public class Table {
      * @return       - true iff a token was successfully removed.
      */
     public synchronized boolean removeToken(int player, int slot) {
-        // TODO implement
         if(tokensOnTable.elementAt(slot).contains(player)){
             tokensOnTable.elementAt(slot).remove(tokensOnTable.elementAt(slot).indexOf(player));
         }
@@ -177,4 +186,7 @@ public class Table {
         return tokensOnTable;
     }
 
+    public synchronized boolean hasNoSetOnTable(){
+            return env.util.findSets(cardsOnTable, 1).size() == 0;
+    }
  }

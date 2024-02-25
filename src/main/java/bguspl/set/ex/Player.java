@@ -26,7 +26,9 @@ public class Player implements Runnable {
      * Game entities.
      */
     private final Table table;
-
+    final int featureSize;
+    final int tableSize;
+    
     /**
      * The id of the player (starting from 0).
      */
@@ -52,13 +54,6 @@ public class Player implements Runnable {
      * True iff game should be terminated.
      */
     private volatile boolean terminate;
-
-    /**
-     * we add it
-     * holds until when the player should be freezed
-     * intialized by the cuurent time of creating the player in constructor -1 
-     */
-    private volatile long freezeUntil;
     
     /**
      * The current score of the player.
@@ -67,39 +62,42 @@ public class Player implements Runnable {
 
     /** 
      * we add it
-     * Queue for incoming actions
-     * size <=3
+     * Queue for incoming actions of tableSize
      */
     private BlockingQueue<Integer> incomingActions;
 
     /**
-     * an object containg a vector of the player's current chosen slots
+     * an object containing a vector of the player's current chosen slots
      */
      private ChosenSlots chosenSlots;
    
      /*
       * the dealer of the game
       */
-     private Dealer dealer;
+     private Dealer dealer;     
 
-     //private Object lockForPlayer;
-     
+     /**
+      * useful finals
+      */
      final int ONE_SECOND = 1000;
-     
      public static final int PENALTY_MSG = -1;
-     
      public static final int POINT_MSG = -2;
-     
      public static final int CONTINUEPLAY_MSG = -3;
-     
-     final int featureSize;
 
-     final int tableSize;
+     /**
+      * true iff the player has declared a set and waiting for the dealer to give him an answer
+      */
+     private boolean inCheckByDealer = false;;
 
-     private boolean inCheckByDealer;
-
+     /**
+      * for synchronize - waiting for aiThread to be created
+      */
      final Object waitForAi = new Object();
 
+     /**
+      *  if human - always true
+      * else (computer) - true iff the aiThread was created
+      */
      public volatile Boolean aiStarted;
 
     /**
@@ -118,10 +116,7 @@ public class Player implements Runnable {
         this.id = id;
         this.human = human;
         this.incomingActions = new ArrayBlockingQueue<>(env.config.featureSize);
-        freezeUntil= System.currentTimeMillis()-1;
-        //this.lockForPlayer = new Object();
         this.chosenSlots = new ChosenSlots(table, env);
-        this.inCheckByDealer = false;
         this.featureSize = env.config.featureSize;
         this.tableSize = env.config.tableSize;
         this.aiStarted = human;
@@ -191,7 +186,6 @@ public class Player implements Runnable {
         aiThread = new Thread(() -> {
             env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
             while (!terminate) {
-                // TODO implement player key press simulator
                 keyPressed((int) (Math.random() * tableSize));
             }
             env.logger.info("thread " + Thread.currentThread().getName() + " terminated.");
@@ -212,7 +206,6 @@ public class Player implements Runnable {
      * @param slot - the slot corresponding to the key pressed.
      */
     public void keyPressed(int slot) { 
-        //TODO implement
         if ((inCheckByDealer && slot >= 0) || dealer.dealerIsReshuffling) {return;}
         try { 
             incomingActions.put(slot);//when the queue is full the thread will wait
@@ -227,7 +220,7 @@ public class Player implements Runnable {
      */
     public void point() {
          int ignored = table.countCards(); // this part is just for demonstration in the unit tests
-         freezeUntil=System.currentTimeMillis()+env.config.pointFreezeMillis; //the player is blocked for input, see keyPresses method
+         long freezeUntil=System.currentTimeMillis()+env.config.pointFreezeMillis; //the player is blocked for input, see keyPresses method
          env.ui.setFreeze(id, env.config.pointFreezeMillis);
          int cnt = 0;
          while (System.currentTimeMillis() <= freezeUntil && !terminate) {
@@ -235,7 +228,7 @@ public class Player implements Runnable {
              try {
                  Thread.sleep(ONE_SECOND);
              } catch (Exception e) {}
-             env.ui.setFreeze(id, env.config.pointFreezeMillis - ONE_SECOND*cnt);            
+             env.ui.setFreeze(id, env.config.pointFreezeMillis - ONE_SECOND * cnt);            
          }
         env.ui.setScore(id, ++score);
     }        
@@ -244,7 +237,7 @@ public class Player implements Runnable {
      * Penalize a player and perform other related actions.
      */
     public void penalty() {
-        freezeUntil=System.currentTimeMillis()+env.config.penaltyFreezeMillis; //the player is blocked for input, see keyPresses method
+        long freezeUntil=System.currentTimeMillis()+env.config.penaltyFreezeMillis; //the player is blocked for input, see keyPresses method
         env.ui.setFreeze(id, env.config.penaltyFreezeMillis);
         int cnt = 0;
         while (System.currentTimeMillis() <= freezeUntil && !terminate) {

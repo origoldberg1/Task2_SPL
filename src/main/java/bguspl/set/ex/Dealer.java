@@ -12,7 +12,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-//testing 
+
 /**
  * This class manages the dealer's threads and data
  */
@@ -28,6 +28,7 @@ public class Dealer implements Runnable {
      */
     private final Table table;
     private final Player[] players;
+    final int tableSize;
 
     /**
      * The list of card ids that are left in the dealer's deck.
@@ -38,12 +39,12 @@ public class Dealer implements Runnable {
      /**
      * The list of card ids that are left both in the dealer's deck and on the table.
      */   
-    private final List<Integer> cardsInDeckAndTable;
+    private final List<Integer> cardsInDeckAndTable = new ArrayList<>();
 
     /**
      * True iff game should be terminated.
      */
-    private volatile boolean terminate;
+    private volatile boolean terminate = false;
 
     /**
      * The time when the dealer needs to reshuffle the deck due to turn timeout.
@@ -53,29 +54,39 @@ public class Dealer implements Runnable {
     /**
      * slots from which cards should be removed
      */
-    private Vector<Integer> slotsToRemove;
+    private Vector<Integer> slotsToRemove = new Vector<>();
 
     /**
      * queue of players that have sets to check
      */
     private BlockingQueue<Player> playersToCheck;
 
-    private Thread dealerThread;
-
-    private boolean dealerShouldReshuffle; 
-
-    final int tableSize;
+    /**
+     * true iff the dealer needs to reshuffle 
+     */
+    private boolean dealerShouldReshuffle = true; 
     
+    /**
+     * useful finals 
+     */
     final int TEN_MILI_SEC = 10;
-
     final int ONE_SECOND = 1000;
-            
+    final int HALF_SECOND = 500;
+
+    /**
+     * for synchronizing
+     */
     final Object waitOnObject = new Object();
+
+    /**
+     * indicator for when dealer is reshuffling
+     */
+    public volatile boolean dealerIsReshuffling = true;
+
     
-    public volatile boolean dealerIsReshuffling;
-
-    public List<Thread> threadOrder;
-
+    /**
+     * the time in which the last action has occured, used for if TurnTimeoutSeconds=0
+     */
     private long lastAction;
 
 
@@ -84,15 +95,9 @@ public class Dealer implements Runnable {
         this.table = table;
         this.players = players;
         this.deck = IntStream.range(0, env.config.deckSize).boxed().collect(Collectors.toList());
-        this.terminate = false;
-        this.slotsToRemove = new Vector<>();
         this.playersToCheck = new ArrayBlockingQueue<>(players.length);
-        this.dealerShouldReshuffle =true;
-        this.cardsInDeckAndTable = new ArrayList<>();
         cardsInDeckAndTable.addAll(deck);
         this.tableSize = env.config.tableSize;
-        this.dealerIsReshuffling=true;
-        this.threadOrder = new LinkedList<>();
         lastAction = env.config.turnTimeoutMillis;
     }
 
@@ -101,7 +106,6 @@ public class Dealer implements Runnable {
      */
     @Override
     public void run() {
-        this.dealerThread = Thread.currentThread();
         env.logger.info("thread " + Thread.currentThread().getName() + " starting.");
         for (Player player : players) {
             new Thread(player).start();
@@ -118,7 +122,7 @@ public class Dealer implements Runnable {
             dealerIsReshuffling=false;
             dealerShouldReshuffle=false;
             updateTimerDisplay(true);
-            timerLoop(); //self mark- should do things until we need to rersheufle 
+            timerLoop();
             checkPlayersSets();
             dealerIsReshuffling=true;
             removeAllCardsFromTable();
@@ -153,7 +157,7 @@ public class Dealer implements Runnable {
                 } catch (InterruptedException e) {}
             }else{
                 try {
-                    waitOnObject.wait(ONE_SECOND);
+                    waitOnObject.wait(HALF_SECOND);
                 } catch (InterruptedException e) {}
             }
             checkPlayersSets();
@@ -166,7 +170,6 @@ public class Dealer implements Runnable {
      * Called when the game should be terminated.
      */
     public synchronized void terminate() {
-        // TODO implement
         try {
             env.ui.dispose();
         } catch (Exception e) {}
@@ -179,10 +182,6 @@ public class Dealer implements Runnable {
             } catch (InterruptedException e) {};
         }
         terminate = true;
-        // dealerThread.interrupt();
-        // try {
-        //     dealerThread.join();
-        // } catch (InterruptedException e) {}
     }
 
     /**
@@ -210,7 +209,7 @@ public class Dealer implements Runnable {
      * Check if any cards can be removed from the deck and placed on the table.
      */
     private void placeCardsOnTable() {
-        shuffleDeck();
+        Collections.shuffle(deck);
         if(table.countCards() == 0){
             placeAllSlots();
         }
@@ -252,7 +251,6 @@ public class Dealer implements Runnable {
      * Reset and/or update the countdown and the countdown display.
      */
     private void updateTimerDisplay(boolean reset) {
-        // TODO implement
         if(env.config.turnTimeoutMillis > 0){
             if(reset){
                 reshuffleTime = env.config.turnTimeoutMillis + System.currentTimeMillis(); 
@@ -264,21 +262,23 @@ public class Dealer implements Runnable {
                 env.ui.setCountdown(timeLeft, warn);
             }
         }
-        else if(env.config.turnTimeoutMillis == 0){
-            if(reset){
-                lastAction = System.currentTimeMillis();
+        else{
+            if(env.config.turnTimeoutMillis == 0){
+                if(reset){
+                    lastAction = System.currentTimeMillis();
+                }
+                env.ui.setElapsed(System.currentTimeMillis() - lastAction);
             }
-            env.ui.setElapsed(System.currentTimeMillis() - lastAction);
-            //check if there are sets on the table
-        }
-            //check if there are sets on the table
+            if(table.hasNoSetOnTable()){
+                dealerShouldReshuffle = true;
+            }
+        } 
     }
 
     /**
      * Returns all the cards from the table to the deck.
      */
     private void removeAllCardsFromTable() {
-        // TODO implement
         for (int i = 0; i < tableSize; i++) {
             if(table.getSlotToCard()[i] != null){
                 deck.add(table.getSlotToCard()[i]);
@@ -301,7 +301,6 @@ public class Dealer implements Runnable {
      * Check who is/are the winner/s and displays them.
      */
     private void announceWinners() {
-        // TODO implement
         if(players.length == 0) {return;} 
         List<Player> winners = new LinkedList<>();
         winners.add(players[0]);
@@ -373,18 +372,6 @@ public class Dealer implements Runnable {
             return true;
         }
        return false;
-    }
-
-    public int[] cardsToSlots(int[]cards){
-        int [] slots = new int[cards.length];
-        for (int i = 0; i < slots.length; i++) {
-            slots[i] = table.getCardToSlot()[cards[i]];
-        }
-        return slots;
-    }
-
-    public void shuffleDeck(){
-        Collections.shuffle(deck);
     }
 
 }
