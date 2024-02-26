@@ -12,13 +12,15 @@ with a short description of:
 
 1.⁠ ⁠Fully supporting all configuration fields and avoiding the use of magic numbers
 
-1.⁠ ⁠We updated the size of incomingActions to be featureSize instead of 3 sense if has to do with the number of tokens that are
- allowed for each player. Since the size of a set is the size of featureSize, it makes since for the incomingActions vector
+1.⁠ ⁠We updated the size of incomingActions to be featureSize instead of 3 since it has to do with the number of tokens that are
+ allowed for each player. Since the size of a set is the size of featureSize, it makes sence for the incomingActions vector
  that was asked to be of size 3 in the instruction, to be the size of featureSize. 
  Instead of using actual numbers (3 for set, 12 for number of slots, etc.) we used the corresponding features in the Config file.
  For any other number that was used in the code, we made a variable with a meaningful name.
-2.⁠ ⁠Supporting features- we used tableSize (Player - ArtificialInteligence; Dealer- PlaceCardsOnTable, placeAllSlots, removeAllCardsFromTable; Table-Constructor) 
-and featureSize(Player - Constructor, run; ChosenSlots - convertToSet, setVecToArr).
+2.⁠ Player - constructor, createArtificialIntelligence, run; 
+Dealer- PlaceCardsOnTable, placeAllSlots, removeAllCardsFromTable; 
+Table-Constructor; 
+ChosenSlots - convertToSet, setVecToArr
 3.⁠ We ran the game with various values of the configuration fields.
 
 
@@ -31,10 +33,10 @@ terminates his own ai-Thread before reaching the end of the run() method and get
 We created the players' threads in the dealer run() method, and did so by the order of the players array. 
 We terminated the players' threads in reverse order of the players array. We did that by first calling the player's terminate() method,
 and then interrupting the player's thread, and afterwards joining it. We moved on to terminate the next player's thread only after finishing
-thoes actions.
+those actions.
 2.⁠ We created the players' threads int the Dealer's run() method. We forced the opening of the ai Thread in the Player's run() method
 and the Dealer's run() method.
-We terminated the players' threads in the Dealer's run() method.
+We terminated the players' threads in the Dealer's terminate() method.
 3.⁠ ⁠When each Thread was created/terminated we printed a message.
 
 
@@ -47,13 +49,13 @@ config.turnTimeoutMillis = 0: display a timer since the last action (reshuffle o
 Note: in modes without a countdown timer the dealer must ensure there is always at least one legal set on the table.
 
 
-1. In the method updateTimerDisplay in  Dealer class we checked the value of env.config.turnTimeoutMillis, and proceeded accordingly.
-for if turnTimeoutMillis =0 we added the variable "lastAction" that keeps the time in which the last action has occured. 
-and displayed the time using setElapsed, instead if setCountDown.
-if if turnTimeoutMillis <= 0 we also checked if there are sets on the table using a funcion we added in Table class. 
+1. In the method updateTimerDisplay in Dealer class we checked the value of env.config.turnTimeoutMillis, and proceeded accordingly.
+for turnTimeoutMillis = 0 we added the variable "lastAction" that keeps the time in which the last action has occured. 
+and displayed the time using setElapsed, instead of setCountDown.
+if turnTimeoutMillis <= 0 we checked if there are sets on the table using a function we added in Table class. 
 if there were no sets on the table, the Dealer reshuffles.
 2.Dealer - updateTimerDisplay, run. Table - hasNoSetOnTable.
-3. We changed the value of turnTimeoutMillis in the config.properties files and ran tests.
+3. We changed the value of turnTimeoutMillis in the config.properties file and ran tests.
 --------------------
 
 4.⁠ ⁠Making sure that the threads do not wake up unless some actual job needs to be done (e.g., a value needs to be
@@ -64,15 +66,15 @@ changed on the display, key input needs to be handled, etc.) and the only thread
 1. We will use the terms "sleep" and "wake up", for both the actions "sleep" and "ineterrupt", and "wait" and "notify".
 To be exact, we used the method sleep when the only reason for the thread to wake up was time passing (like in Player's penalty() method),
 and the wait method when there were reasons other than time to wake up (like in Dealer's sleepUntilWokenOrTimeout() method).
-Dealer - we only woke the dealer up every half a second to update the timer deispley smoothly, 
-disincluding the last 5 seconds before reshuffling, in witch we woke him up every 10 milliseconds, again, to update the timer display.
+Dealer - we only wake the dealer up every half a second to update the timer display smoothly, 
+disincluding the last 5 seconds before reshuffling, in which we woke him up every 10 milliseconds, again, to update the timer display.
 In addition, the players woke the Dealer up every time they declared a set.
-Moreover, when creating players' threads in the Dealer's run() method, the sleeps until the player's ai thread is created. By that we 
+Moreover, when creating the players' threads in the Dealer's run() method, the dealer sleeps until the player's ai thread is created. By that we 
 avoid busy-waiting.
-Players - We put a players to sleep when they declared a set. They are woken by the dealer, once he checked the set, using blocking queue. Also, we put the 
+Players - We put a players to sleep when they declare a set. They are woken by the dealer, once he checked the set, using blocking queue. Also, we put the 
 players to sleep when they get a point or penality, waking them up once every second to update the time left for the freeze on the display.
 2. Dealer - run, sleepUntilWokenOrTimeout, addPlayerToCheck, checkPlayersSets; Player - run, point, penalty, keyPressed.
 3. We made sure in the code to wake up every thread only when there was somthing for it to do. To make sure of it we printed a message every 
-time a thread went to sleep/woke up. We payed attention to tae amount of times a thread had woke up, making sure there isn't any 
+time a thread went to sleep/woke up. We payed attention to the amount of times a thread had woke up, making sure there isn't any 
 busy-waiting (we did that on top of intentionaly avoiding so when writing code). Finally, we checked the CPU activity. making sure the 
-program isn't over-working.
+program isn't over-working, which is an indication of busy-waiting.
