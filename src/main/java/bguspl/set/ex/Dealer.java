@@ -72,6 +72,7 @@ public class Dealer implements Runnable {
     final int TEN_MILI_SEC = 10;
     final int ONE_SECOND = 1000;
     final int HALF_SECOND = 500;
+    final int ILLEGAL = -1;
 
     /**
      * for synchronizing
@@ -218,7 +219,7 @@ public class Dealer implements Runnable {
             int slot;
             while(!deck.isEmpty() && table.countCards() < tableSize){
                 slot = findEmptySlot();
-                if(slot >= 0){  //the slot is a legal one
+                if(slot != ILLEGAL){ 
                     table.placeCard(deck.remove(0), slot);
                 }
             }
@@ -244,7 +245,7 @@ public class Dealer implements Runnable {
                 return i;
             }
         }
-        return -1;
+        return ILLEGAL;
     }
 
 

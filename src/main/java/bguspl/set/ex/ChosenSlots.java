@@ -51,7 +51,7 @@ public class ChosenSlots{
 
     public synchronized int[] convertToSet(){
         if (size() == featureSize) {
-            return slotsToCards(setVecToArr(slotsVector));
+            return slotsToCards(setToArr(slotsVector));
         } 
         return null;
     }
@@ -64,7 +64,7 @@ public class ChosenSlots{
         return cards;
     }
 
-    private int[] setVecToArr(Vector<Integer> vec){
+    private int[] setToArr(Vector<Integer> vec){
         int[] res = new int[featureSize];
         for (int i = 0; i < res.length; i++) {
             res[i] = vec.get(i);

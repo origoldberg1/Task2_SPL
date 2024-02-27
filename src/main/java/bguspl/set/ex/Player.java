@@ -158,11 +158,11 @@ public class Player implements Runnable {
                     else{  //we need to place token
                         if(chosenSlots.size() != featureSize){
                             if(table.placeToken(id, action)){
-                                chosenSlots.add(action); //place the theSlot from the array
+                                chosenSlots.add(action); 
                                 if (chosenSlots.size() == featureSize){
                                     inCheckByDealer = true;
                                     incomingActions.clear();   
-                                    dealer.addPlayerToCheck(this); // calling the dealer to check its slots
+                                    dealer.addPlayerToCheck(this); 
                                 }
                             }
                         }
